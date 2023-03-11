@@ -8,6 +8,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { corsUrl, environment, db } = require('./config');
 const session = require('express-session');
+const passport = require('passport')
 const MongoStore = require('connect-mongo');
 const { ApiError } = require('./core/ApiError');
 require('./database')();
@@ -20,6 +21,7 @@ const app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(helmet());
+app.use(passport.initialize())
 app.use(
   session({
     secret: process.env.SECRET,
@@ -30,6 +32,7 @@ app.use(
     }),
   }),
 );
+
 app.use(cors({ origin: corsUrl, optionsSuccessStatus: 200 }));
 app.use(morgan('dev'));
 app.use(express.json());
