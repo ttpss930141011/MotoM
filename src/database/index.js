@@ -16,7 +16,6 @@ module.exports = () => {
   Logger.debug(dbURI);
 
   // Create the database connection
-  console.log('Mongoose connection start');
   mongoose.set('strictQuery', false);
   mongoose
     .connect(dbURI, options)
