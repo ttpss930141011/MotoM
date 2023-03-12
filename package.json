@@ -15,14 +15,27 @@
     "dotenv": "^16.0.3",
     "ejs": "~2.6.1",
     "express": "~4.16.1",
+    "express-favicon": "^2.0.4",
     "express-session": "^1.17.3",
     "helmet": "^6.0.1",
     "http-errors": "~1.6.3",
+    "joi": "^17.8.3",
     "mongoose": "^6.7.2",
     "morgan": "~1.9.1",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.4.4",
+    "@commitlint/config-conventional": "^17.4.4",
+    "commitizen": "^4.3.0",
+    "cz-git": "^1.6.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-git"
+    }
   }
 }

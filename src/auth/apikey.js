@@ -1,11 +1,11 @@
 const express = require('express');
 const ApiKeyRepo = require('../database/repository/ApiKeyRepo');
 const { ForbiddenError } = require('../core/ApiError');
-// const Logger = require('../core/Logger');
+const Logger = require('../core/Logger');
 const { Header } = require('../core/utils');
 const schema = require('./schema');
-const validator = require('../helpers/validator').default;
-const asyncHandler = require('../helpers/asyncHandler').default;
+const { validator } = require('../helpers/validator');
+const asyncHandler = require('../helpers/asyncHandler');
 
 const router = express.Router();
 
