@@ -5,6 +5,7 @@ const { InternalError } = require('../../core/ApiError');
 module.exports = class UserRepo {
   // contains critical information of the user
   static findById(id) {
+    console.log(id);
     return UserModel.findOne({ _id: id, status: true })
       .select('+password +roles')
       .populate({

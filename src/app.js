@@ -4,6 +4,7 @@ const { NotFoundError, InternalError } = require('./core/ApiError');
 const morgan = require('morgan');
 const Logger = require('./core/Logger');
 const cors = require('cors');
+const flash = require('connect-flash');
 const helmet = require('helmet');
 const { corsUrl, environment, db } = require('./config');
 const session = require('express-session');
@@ -12,10 +13,12 @@ const { ApiError } = require('./core/ApiError');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const favicon = require('express-favicon');
+const { Types } = require('mongoose');
 const mongoose = require('./database')();
 const routesV1 = require('./routes');
 const UsersModel = require('./database/repository/UserRepo');
 const { BadRequestError } = require('./core/ApiError');
+const bcrypt = require('bcrypt');
 // routes import
 
 process.on('uncaughtException', (e) => {
@@ -45,29 +48,65 @@ app.use(
     }),
   }),
 );
-/*-------------------------------------------------------------------------*/
+/*---------------------------------------------------------*/
+// Use Flash
+app.use(flash());
+/*---------------------------------------------------------*/
 // 初始化 Passport
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(
+  'login',
   new LocalStrategy(async (username, password, done) => {
     try {
       const user = await UsersModel.findByUsername(username);
       if (!user) return done(new BadRequestError('User not found'), false);
-      if (user.password !== password) return done(new BadRequestError('Incorrect password'), false);
+      if (!bcrypt.compareSync(password, user.password)) return done(new BadRequestError('Incorrect password'), false);
       return done(null, user);
     } catch (err) {
       if (err) return done(err);
     }
   }),
 );
-// 序列化和反序列化
-passport.serializeUser(function (user, done) {
-  done(null, user.username);
-});
+passport.use(
+  'register',
+  new LocalStrategy(
+    {
+      passReqToCallback: true,
+    },
+    async (req, username, password, done) => {
+      try {
+        const existingUser = await UsersModel.findByUsername(username);
+        if (existingUser) return done(new BadRequestError('User already exists'), false);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await UsersModel.create(
+          {
+            username: username,
+            password: hashedPassword,
+          },
+          'EDITOR',
+        );
+        return done(null, newUser);
+      } catch (err) {
+        return done(err);
+      }
+    },
+  ),
+);
 
-passport.deserializeUser(function (username, done) {
-  done(null, { username: username });
+// 序列化和反序列化
+passport.serializeUser((user, cb) => {
+  process.nextTick(function () {
+    return cb(null, {
+      id: user.id,
+      username: user.username,
+});
+  });
+});
+passport.deserializeUser((user, cb) => {
+  process.nextTick(function () {
+    return cb(null, user);
+  });
 });
 /*-------------------------------------------------------------------------*/
 app.use(cors({ origin: corsUrl, optionsSuccessStatus: 200 }));

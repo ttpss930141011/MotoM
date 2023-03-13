@@ -1,23 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-const UsersModel = require('../../database/repository/UserRepo');
 const { validator } = require('../../helpers/validator');
 const schema = require('./schema');
+const { SuccessResponse } = require('../../core/ApiResponse');
+const { BadRequestError } = require('../../core/ApiError');
 
 router.get('/', function (req, res) {
-  res.render('register', { title: 'Register', message: null });
+  res.render('register', { title: 'Register', message: req.flash('info') });
 });
 
-// 設定/register路由
-router.post('/', validator(schema.register), async (req, res) => {
-    const newUser = {
-        username: req.body.username,
-        password: req.body.password,
-    };
-    const user = await UsersModel.create(newUser, 'EDITOR');
-    console.log('Register success', user);
-    res.status(200).send({ message: 'Register success' });
+router.post('/', validator(schema.register), passport.authenticate('register'), (req, res) => {
+  req.login(req.user, (err) => {
+    if (err) return new BadRequestError(err);
+    return new SuccessResponse('success', { message: 'login success' }).send(res);
+  });
 });
 
 module.exports = router;
