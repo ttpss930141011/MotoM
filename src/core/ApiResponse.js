@@ -16,7 +16,11 @@ const ResponseStatus = {
 };
 
 class ApiResponse {
-  constructor(statusCode, status, message) {}
+  constructor(statusCode, status, message) {
+    this.status = status;
+    this.statusCode = statusCode;
+    this.message = message;
+  }
 
   prepare(res, response) {
     return res.status(this.status).json(ApiResponse.sanitize(response));

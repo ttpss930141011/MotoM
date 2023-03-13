@@ -4,7 +4,11 @@ const COLLECTION_NAME = 'users';
 
 const UserSchema = new Schema(
   {
-    account: {
+    username: {
+      type: Schema.Types.String,
+      required: true,
+    },
+    password: {
       type: Schema.Types.String,
       required: true,
     },
@@ -33,5 +37,5 @@ const UserSchema = new Schema(
     versionKey: false,
   },
 );
-
-module.exports = model(DOCUMENT_NAME, UserSchema, COLLECTION_NAME);
+const UsersModel = model(DOCUMENT_NAME, UserSchema, COLLECTION_NAME);
+module.exports = UsersModel;

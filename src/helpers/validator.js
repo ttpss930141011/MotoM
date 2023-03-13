@@ -27,7 +27,6 @@ const validator =
       const { details } = error;
       const message = details.map((i) => i.message.replace(/['"]+/g, '')).join(',');
       Logger.error(message);
-
       next(new BadRequestError(message));
     } catch (error) {
       next(error);

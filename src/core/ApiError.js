@@ -1,4 +1,4 @@
-const { environment } = require("../config.js");
+const { environment } = require('../config.js');
 const {
   AuthFailureResponse,
   AccessTokenErrorResponse,
@@ -6,24 +6,26 @@ const {
   NotFoundResponse,
   BadRequestResponse,
   ForbiddenResponse,
-} = require("./ApiResponse.js");
+} = require('./ApiResponse.js');
 
 const ErrorType = {
-  BAD_TOKEN: "BadTokenError",
-  TOKEN_EXPIRED: "TokenExpiredError",
-  UNAUTHORIZED: "AuthFailureError",
-  ACCESS_TOKEN: "AccessTokenError",
-  INTERNAL: "InternalError",
-  NOT_FOUND: "NotFoundError",
-  NO_ENTRY: "NoEntryError",
-  NO_DATA: "NoDataError",
-  BAD_REQUEST: "BadRequestError",
-  FORBIDDEN: "ForbiddenError",
+  BAD_TOKEN: 'BadTokenError',
+  TOKEN_EXPIRED: 'TokenExpiredError',
+  UNAUTHORIZED: 'AuthFailureError',
+  ACCESS_TOKEN: 'AccessTokenError',
+  INTERNAL: 'InternalError',
+  NOT_FOUND: 'NotFoundError',
+  NO_ENTRY: 'NoEntryError',
+  NO_DATA: 'NoDataError',
+  BAD_REQUEST: 'BadRequestError',
+  FORBIDDEN: 'ForbiddenError',
 };
 
 class ApiError extends Error {
-  constructor(type, message = "error") {
-    super(type);
+  constructor(type, message = 'error') {
+    super(type, message);
+    this.type = type;
+    this.message = message;
   }
 
   static handle(err, res) {
@@ -47,7 +49,7 @@ class ApiError extends Error {
       default: {
         let message = err.message;
         // Do not send failure message in production as it may send sensitive data
-        if (environment === "production") message = "Something wrong happened.";
+        if (environment === 'production') message = 'Something wrong happened.';
         return new InternalErrorResponse(message).send(res);
       }
     }
@@ -55,31 +57,31 @@ class ApiError extends Error {
 }
 
 class AuthFailureError extends ApiError {
-  constructor(message = "Invalid Credentials") {
+  constructor(message = 'Invalid Credentials') {
     super(ErrorType.UNAUTHORIZED, message);
   }
 }
 
 class InternalError extends ApiError {
-  constructor(message = "Internal error") {
+  constructor(message = 'Internal error') {
     super(ErrorType.INTERNAL, message);
   }
 }
 
 class BadRequestError extends ApiError {
-  constructor(message = "Bad Request") {
+  constructor(message = 'Bad Request') {
     super(ErrorType.BAD_REQUEST, message);
   }
 }
 
 class NotFoundError extends ApiError {
-  constructor(message = "Not Found") {
+  constructor(message = 'Not Found') {
     super(ErrorType.NOT_FOUND, message);
   }
 }
 
 class ForbiddenError extends ApiError {
-  constructor(message = "Permission denied") {
+  constructor(message = 'Permission denied') {
     super(ErrorType.FORBIDDEN, message);
   }
 }
@@ -91,25 +93,25 @@ class NoEntryError extends ApiError {
 }
 
 class BadTokenError extends ApiError {
-  constructor(message = "Token is not valid") {
+  constructor(message = 'Token is not valid') {
     super(ErrorType.BAD_TOKEN, message);
   }
 }
 
 class TokenExpiredError extends ApiError {
-  constructor(message = "Token is expired") {
+  constructor(message = 'Token is expired') {
     super(ErrorType.TOKEN_EXPIRED, message);
   }
 }
 
 class NoDataError extends ApiError {
-  constructor(message = "No data available") {
+  constructor(message = 'No data available') {
     super(ErrorType.NO_DATA, message);
   }
 }
 
 class AccessTokenError extends ApiError {
-  constructor(message = "Invalid access token") {
+  constructor(message = 'Invalid access token') {
     super(ErrorType.ACCESS_TOKEN, message);
   }
 }

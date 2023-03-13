@@ -14,6 +14,8 @@ const LocalStrategy = require('passport-local').Strategy;
 const favicon = require('express-favicon');
 const mongoose = require('./database')();
 const routesV1 = require('./routes');
+const UsersModel = require('./database/repository/UserRepo');
+const { BadRequestError } = require('./core/ApiError');
 // routes import
 
 process.on('uncaughtException', (e) => {
@@ -48,12 +50,14 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(
-  new LocalStrategy(function (username, password, done) {
-    // 在這裡進行user password驗證
-    if (username === 'user' && password === 'password') {
-      return done(null, { username: username });
-    } else {
-      return done(null, false, { message: 'Incorrect username or password.' });
+  new LocalStrategy(async (username, password, done) => {
+    try {
+      const user = await UsersModel.findByUsername(username);
+      if (!user) return done(new BadRequestError('User not found'), false);
+      if (user.password !== password) return done(new BadRequestError('Incorrect password'), false);
+      return done(null, user);
+    } catch (err) {
+      if (err) return done(err);
     }
   }),
 );
@@ -67,7 +71,7 @@ passport.deserializeUser(function (username, done) {
 });
 /*-------------------------------------------------------------------------*/
 app.use(cors({ origin: corsUrl, optionsSuccessStatus: 200 }));
-app.use(morgan('common'));
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -80,18 +84,11 @@ app.use((req, res, next) => next(new NotFoundError()));
 /*---------------------------------------------------------*/
 // Middleware Error Handler
 app.use((err, req, res, next) => {
-  if (err instanceof ApiError) {
-    ApiError.handle(new InternalError(), res);
-    if (err.type === ErrorType.INTERNAL)
-      Logger.error(`500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-  } else {
-    Logger.error(`500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-    Logger.error(err);
-    if (environment === 'development') {
-      return res.status(500).send(err);
-    }
-    ApiError.handle(new InternalError(), res);
-  }
+  Logger.error(`500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  Logger.error(err);
+  if (err instanceof ApiError) return ApiError.handle(err, res);
+  if (environment === 'development') return res.status(500).send(err);
+  return ApiError.handle(new InternalError(), res);
 });
 
 module.exports = app;
