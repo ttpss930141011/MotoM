@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./components/header'); %>
+  </head>
+  <header><%- include('./components/navbar'); %> <%- include('./components/sidebar'); %></header>
+  <body>
+    <main style="margin-top: 58px">
+      <div
+        class="row justify-content-center"
+        style="display: flex; align-items: center; justify-content: center; height: 20vh; margin-right: 0px"
+      >
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-body">
+              <form action="#" method="POST">
+                <div class="input-group mb-3">
+                  <input type="text" class="form-control form-control-lg" name="license-plate" placeholder="車牌號碼" />
+                  <button type="submit" class="btn btn-primary btn-lg">搜尋</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <%- include('./components/footer'); %>
+    <script src="/vendors/jquery/jquery.min.js"></script>
+    <script src="/vendors/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/javascripts/login/index.js"></script>
+  </body>
+</html>
