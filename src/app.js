@@ -35,7 +35,7 @@ app.set('view engine', 'ejs');
 app.use(helmet());
 /*---------------------------------------------------------*/
 // Use Favicon
-app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon.ico')));
+app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon', 'favicon.ico')));
 /*---------------------------------------------------------*/
 // Use Session
 app.use(
@@ -100,7 +100,7 @@ passport.serializeUser((user, cb) => {
     return cb(null, {
       id: user.id,
       username: user.username,
-});
+    });
   });
 });
 passport.deserializeUser((user, cb) => {

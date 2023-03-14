@@ -3,14 +3,14 @@
   <head>
     <%- include('./components/header'); %>
   </head>
-  <header><%- include('./components/navbar'); %> <%- include('./components/sidebar'); %></header>
   <body>
-    <main style="margin-top: 58px">
-      <div class="container pt-4">qwe</div>
+    <%- include('./components/navbar'); %> <%- include('./components/sidebar'); %>
+    <main class="mt-5 pt-3">
+      <div class="container-fluid"></div>
+      <%- include('./components/footer'); %>
     </main>
 
     <script src="/vendors/jquery/jquery.min.js"></script>
     <script src="/vendors/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="/javascripts/login/index.js"></script>
   </body>
 </html>
