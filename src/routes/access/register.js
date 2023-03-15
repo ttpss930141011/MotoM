@@ -6,7 +6,7 @@ const schema = require('./schema');
 const { SuccessResponse } = require('../../core/ApiResponse');
 const { BadRequestError } = require('../../core/ApiError');
 
-router.get('/', function (req, res) {
+router.get('/', (req, res) => {
   res.render('register', { title: 'Register', message: req.flash('info') });
 });
 

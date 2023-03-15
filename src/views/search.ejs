@@ -13,9 +13,15 @@
         <div class="col-md-8">
           <div class="card">
             <div class="card-body">
-              <form action="#" method="POST">
+              <form id="moto-search-form" method="POST">
                 <div class="input-group mb-3">
-                  <input type="text" class="form-control form-control-lg" name="license-plate" placeholder="車牌號碼" />
+                  <input
+                    type="text"
+                    id="license_no"
+                    class="form-control form-control-lg"
+                    name="license_no"
+                    placeholder="車牌號碼"
+                  />
                   <button type="submit" class="btn btn-primary btn-lg">搜尋</button>
                 </div>
               </form>
@@ -27,6 +33,6 @@
     <%- include('./components/footer'); %>
     <script src="/vendors/jquery/jquery.min.js"></script>
     <script src="/vendors/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="/javascripts/login/index.js"></script>
+    <script src="/javascripts/search/index.js"></script>
   </body>
 </html>
