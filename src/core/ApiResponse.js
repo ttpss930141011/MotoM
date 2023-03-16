@@ -90,6 +90,7 @@ class FailureMsgResponse extends ApiResponse {
 class SuccessResponse extends ApiResponse {
   constructor(message, data) {
     super(StatusCode.SUCCESS, ResponseStatus.SUCCESS, message);
+    this.data = data;
   }
 
   send(res) {

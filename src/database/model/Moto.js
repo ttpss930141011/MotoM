@@ -14,6 +14,7 @@ const schema = new Schema(
     },
     owner_name: {
       type: String,
+      required: true,
     },
     owner_phone: {
       type: String,
@@ -25,7 +26,7 @@ const schema = new Schema(
           ref: 'Record',
         },
       ],
-      required: true,
+      // required: true,
       select: false,
     },
 

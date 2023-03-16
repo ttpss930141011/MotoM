@@ -3,12 +3,41 @@
   <head>
     <%- include('./components/header'); %>
   </head>
-  <header><%- include('./components/navbar'); %> <%- include('./components/sidebar'); %></header>
+  <header>
+    <%- include('./components/navbar'); %> <%- include('./components/sidebar'); %>
+    <style>
+      table {
+          border-collapse: collapse;
+          width: 100%;
+          
+      }
+      table td, table th {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: left;
+      }
+      table th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+          text-align: center;
+      }
+      @media (max-width:  710px) {
+          table {
+              display: block;
+              overflow-x: auto;
+              white-space: nowrap;
+          }
+          table td, table th {
+              white-space: nowrap;
+          }
+      }
+  </style>
+  </header>
   <body>
     <main style="margin-top: 58px">
       <div
-        class="row justify-content-center"
-        style="display: flex; align-items: center; justify-content: center; height: 20vh; margin-right: 0px"
+        class="row justify-content-center d-flex overflow-auto justify-content-center align-items-center mx-0"
+        style="height: 20vh"
       >
         <div class="col-md-8">
           <div class="card">
@@ -29,10 +58,37 @@
           </div>
         </div>
       </div>
+      <div
+        class="row justify-content-center d-flex justify-content-center align-items-center mx-0"
+        style="height: 65vh"
+      >
+        <div class="card h-100 overflow-auto">
+          <div class="card">
+            <div class="card-header">顧客資訊</div>
+            <div class="card">
+              <table>
+                <tbody>
+                    <tr>
+                        <td>機車車牌</td>
+                        <td>RFS-123</td>
+                        <td>顧客稱呼</td>
+                        <td>陳小姐</td>
+                        <td>聯絡方式</td>
+                        <td>0972027804</td>
+                        <td>上次來店</td>
+                        <td>2023/03/05</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
     <%- include('./components/footer'); %>
     <script src="/vendors/jquery/jquery.min.js"></script>
     <script src="/vendors/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="/javascripts/search/index.js"></script>
+    <script src="/vendors/sweetalert2/sweetalert2@11.js"></script>
   </body>
 </html>

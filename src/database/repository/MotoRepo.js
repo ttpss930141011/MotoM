@@ -6,11 +6,11 @@ module.exports = class MotoRepo {
   }
 
   static async findByLicenseNo(license_no) {
-    return MotoModel.find({ license_no }).lean().exec();
+    return MotoModel.findOne({ license_no }).lean().exec();
   }
 
   static async create(moto) {
-    return MotoModel.create(moto).toObject();
+    return MotoModel.create(moto);
   }
   static async update(customer) {
     return MotoModel.updateOne({ _id: customer._id }, { $set: { ...customer } })
