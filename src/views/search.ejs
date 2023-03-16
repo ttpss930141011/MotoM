@@ -4,84 +4,77 @@
     <%- include('./components/header'); %>
   </head>
   <header>
-    <%- include('./components/navbar'); %> <%- include('./components/sidebar'); %>
+    <%- include('./components/navbar'); %>
     <style>
       table {
-          border-collapse: collapse;
-          width: 100%;
-          
+        border-collapse: collapse;
+        width: 100%;
       }
-      table td, table th {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
+      table td,
+      table th {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
       }
       table th {
-          background-color: #f2f2f2;
-          font-weight: bold;
-          text-align: center;
+        background-color: #f2f2f2;
+        font-weight: bold;
+        text-align: center;
       }
-      @media (max-width:  710px) {
-          table {
-              display: block;
-              overflow-x: auto;
-              white-space: nowrap;
-          }
-          table td, table th {
-              white-space: nowrap;
-          }
+      @media (max-width: 710px) {
+        table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+        table td,
+        table th {
+          white-space: nowrap;
+        }
       }
-  </style>
+      .title {
+        font-weight: bold;
+        background-color: #ddd;
+        
+      }
+    </style>
   </header>
   <body>
-    <main style="margin-top: 58px">
-      <div
-        class="row justify-content-center d-flex overflow-auto justify-content-center align-items-center mx-0"
-        style="height: 20vh"
-      >
-        <div class="col-md-8">
-          <div class="card">
-            <div class="card-body">
-              <form id="moto-search-form" method="POST">
-                <div class="input-group mb-3">
-                  <input
-                    type="text"
-                    id="license_no"
-                    class="form-control form-control-lg"
-                    name="license_no"
-                    placeholder="車牌號碼"
-                  />
-                  <button type="submit" class="btn btn-primary btn-lg">搜尋</button>
-                </div>
-              </form>
+    <main style="margin-top: 58px; padding: 10px">
+      <div class="card">
+        <div class="card-header">車牌查詢</div>
+        <div class="card-body">
+          <form id="moto-search-form" method="POST">
+            <div class="input-group mb-3">
+              <input
+                type="text"
+                id="license_no"
+                class="form-control form-control-lg"
+                name="license_no"
+                placeholder="車牌號碼"
+              />
+              <button type="submit" class="btn btn-primary btn-lg">搜尋</button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
-      <div
-        class="row justify-content-center d-flex justify-content-center align-items-center mx-0"
-        style="height: 65vh"
-      >
-        <div class="card h-100 overflow-auto">
-          <div class="card">
-            <div class="card-header">顧客資訊</div>
-            <div class="card">
-              <table>
-                <tbody>
-                    <tr>
-                        <td>機車車牌</td>
-                        <td>RFS-123</td>
-                        <td>顧客稱呼</td>
-                        <td>陳小姐</td>
-                        <td>聯絡方式</td>
-                        <td>0972027804</td>
-                        <td>上次來店</td>
-                        <td>2023/03/05</td>
-                    </tr>
-                </tbody>
-            </table>
-            </div>
-          </div>
+      <div class="card">
+        <div class="card-header">顧客資訊</div>
+        <div class="card-body">
+          <table>
+            <tbody>
+              <tr>
+                <td class="title">機車車牌</td>
+                <td>RFS-123</td>
+                <td class="title">顧客稱呼</td>
+                <td>陳小姐</td>
+                <td class="title">聯絡方式</td>
+                <td>0972027804</td>
+                <td class="title">上次來店</td>
+                <td>2023/03/05</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </main>
