@@ -6,13 +6,23 @@ const { BadRequestError } = require('../../core/ApiError');
 const { SuccessResponse } = require('../../core/ApiResponse');
 const asyncHandler = require('../../helpers/asyncHandler');
 const _ = require('lodash');
-const { validator } = require('../../helpers/validator');
+const { validator, ValidationSource } = require('../../helpers/validator');
 const authentication = require('../../auth/authentication');
+const dayjs = require('dayjs');
 
 // 客戶列表頁面路由
-router.get('/', (req, res) => {
-  res.render('customers', { title: 'Customers' });
-});
+router.get(
+  '/:license_no',
+  validator(schema.find, ValidationSource.PARAM),
+  asyncHandler(async (req, res) => {
+    const moto = await MotoRepo.findByLicenseNo(req.params.license_no);
+    if (_.isEmpty(moto)) throw new BadRequestError('not found');
+    console.log(moto);
+    moto.updatedAt = dayjs(moto.updatedAt).locale('zh-tw').format('YYYY/MM/DD HH:mm:ss');
+    moto.createdAt = dayjs(moto.createdAt).locale('zh-tw').format('YYYY/MM/DD HH:mm:ss');
+    res.render('moto', { moto });
+  }),
+);
 
 router.post(
   '/',
