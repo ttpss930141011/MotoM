@@ -3,11 +3,11 @@
   <head>
     <%- include('./components/header'); %>
   </head>
-  <div id="container">
-    <body>
-      <header><%- include('./components/navbar'); %></header>
-      <main id="main" class="container mt-nav-height p-3 overflow-auto d-flex justify-content-center align-items-center">
-        <div class="card">
+  <body>
+    <header><%- include('./components/navbar'); %></header>
+    <div class="wrapper">
+      <main class="container p-3 d-flex justify-content-center align-items-center vh-100">
+        <div class="card w-100">
           <div class="card-header">車牌查詢</div>
           <div class="card-body">
             <form id="moto-search-form" method="POST">
@@ -25,12 +25,11 @@
           </div>
         </div>
       </main>
-
-      <%- include('./components/footer'); %>
-      <script src="/vendors/jquery/jquery.min.js"></script>
-      <script src="/vendors/bootstrap/js/bootstrap.bundle.min.js"></script>
-      <script src="/javascripts/search/index.js"></script>
-      <script src="/vendors/sweetalert2/sweetalert2@11.js"></script>
-    </body>
-  </div>
+    </div>
+    <%- include('./components/footer'); %>
+    <script src="/vendors/jquery/jquery.min.js"></script>
+    <script src="/vendors/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/javascripts/search/index.js"></script>
+    <script src="/vendors/sweetalert2/sweetalert2@11.js"></script>
+  </body>
 </html>

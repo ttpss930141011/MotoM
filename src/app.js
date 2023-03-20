@@ -97,8 +97,9 @@ passport.use(
 // 序列化和反序列化
 passport.serializeUser((user, cb) => {
   process.nextTick(function () {
+    console.log(user)
     return cb(null, {
-      id: user.id,
+      _id: user._id,
       username: user.username,
     });
   });

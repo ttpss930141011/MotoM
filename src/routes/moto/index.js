@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const MotoRepo = require('../../database/repository/MotoRepo');
+const RecordRepo = require('../../database/repository/RecordRepo');
 const schema = require('./schema');
 const { BadRequestError } = require('../../core/ApiError');
 const { SuccessResponse } = require('../../core/ApiResponse');
@@ -34,10 +35,29 @@ router.post(
     const moto = await MotoRepo.findByLicenseNo(license_no);
     if (!_.isEmpty(moto)) throw new BadRequestError('license_no already exists');
     const createdMoto = await MotoRepo.create({ license_no, owner_name, owner_phone });
-    console.log(createdMoto);
-    return new SuccessResponse('success', createdMoto).send(res);
+    const createdRecord = await RecordRepo.create({
+      moto_id: createdMoto._id,
+      action: 'CREATED',
+      served_by: req.user._id,
+      message: `建立了車牌號碼為 ${license_no} 的車輛資料`,
+    });
+    const updatedMoto = await MotoRepo.updateRecord(createdMoto._id, createdRecord._id);
+    return new SuccessResponse('success', updatedMoto).send(res);
   }),
 );
+
+router.put(
+  '/license_no/:license_no',
+  validator(schema.update),
+  asyncHandler(async (req, res) => {
+    const { license_no } = req.params;
+    const { owner_name, owner_phone = '', id } = req.body;
+    const updatedMoto = await MotoRepo.update({ _id: id, license_no, owner_name, owner_phone });
+    console.log(updatedMoto);
+    return new SuccessResponse('success', updatedMoto).send(res);
+  }),
+);
+
 // 單一客戶詳細資料頁面路由
 // router.get('/customers/:id', customers.show);
 
