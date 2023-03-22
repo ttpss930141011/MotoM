@@ -10,7 +10,7 @@ const schema = new Schema(
       required: true,
       unique: true,
       trim: true,
-      lowercase: true,
+      uppercase: true,
     },
     owner_name: {
       type: String,

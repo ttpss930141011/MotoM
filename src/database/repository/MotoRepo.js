@@ -1,6 +1,17 @@
 const MotoModel = require('../model/Moto');
 
 module.exports = class MotoRepo {
+  static async findById(id) {
+    return MotoModel.findById(id)
+      .select('+records')
+      .populate({
+        path: 'records',
+        match: { status: true },
+      })
+      .lean()
+      .exec();
+  }
+
   static async findAll() {
     return MotoModel.find({}).lean().exec();
   }
@@ -11,6 +22,7 @@ module.exports = class MotoRepo {
       .populate({
         path: 'records',
         match: { status: true },
+        populate: { path: 'served_by', select: 'username' },
       })
       .lean()
       .exec();

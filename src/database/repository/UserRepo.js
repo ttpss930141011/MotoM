@@ -4,8 +4,23 @@ const { InternalError } = require('../../core/ApiError');
 
 module.exports = class UserRepo {
   // contains critical information of the user
+  static findAll() {
+    return UserModel.find({ status: true })
+      .select('+roles')
+      .populate({
+        path: 'roles',
+        match: { status: true },
+        select: { code: 1 },
+      })
+      .lean()
+      .exec();
+  }
+
+  static findAllUsername() {
+    return UserModel.find({ status: true }).select('username').lean().exec();
+  }
+
   static findById(id) {
-    console.log(id);
     return UserModel.findOne({ _id: id, status: true })
       .select('+password +roles')
       .populate({
