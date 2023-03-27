@@ -37,8 +37,12 @@ module.exports = class MotoRepo {
       .exec();
   }
   static async updateRecord(motoId, recordId) {
-    return MotoModel.updateOne({ _id: motoId }, { $push: { records: recordId } })
+    return MotoModel.findOneAndUpdate({ _id: motoId }, { $push: { records: recordId } }, { new: true })
       .lean()
       .exec();
+  }
+
+  static async pullRecord(motoId, recordId) {
+    return await MotoModel.findOneAndUpdate({ _id: motoId }, { $pull: { records: recordId } });
   }
 };

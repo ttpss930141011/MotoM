@@ -18,24 +18,46 @@
           <div class="card-body">
             <div class="row text-nowrap">
               <div class="visually-hidden">
-                <div class="title">id</div>
+                <div class="fw-bold">id</div>
                 <div id="id" class="visually-hidden"><%=moto._id %></div>
                 <div id="moto" class="visually-hidden"><%=JSON.stringify(moto) %></div>
               </div>
-              <div class="col col-md-3 border p-0">
-                <div class="title">機車車牌</div>
+              <div class="col col-md-3 border p-1">
+                <div class="fw-bold">機車車牌</div>
                 <div id="license_no"><%=moto.license_no %></div>
               </div>
-              <div class="col col-md-3 border p-0">
-                <div class="title">顧客稱呼</div>
+              <div class="col col-md-3 border p-1">
+                <div class="fw-bold">顧客稱呼</div>
                 <div id="owner_name"><%=moto.owner_name %></div>
               </div>
-              <div class="col col-md-3 border p-0">
-                <div class="title">聯絡方式</div>
+              <div class="col col-md-3 border p-1">
+                <div class="fw-bold">聯絡方式</div>
                 <div id="owner_phone"><%=moto.owner_phone %></div>
               </div>
-              <div class="col col-md-3 border p-0">
-                <div class="title">上次來店</div>
+              <div class="col col-md-3 border p-1">
+                <div class="fw-bold">生日</div>
+                <div><%=moto.updatedAt %></div>
+              </div>
+              <div class="col col-md-6 border p-1">
+                <div class="fw-bold">會員組</div>
+                <div>
+                  <% if (moto.owner_type === 'new') { %>
+                  <span>新會員</span>
+                  <i class="bi bi-trophy-fill text-gray-900"></i>
+                  <% } else if (moto.owner_type === 'bronze') { %>
+                  <span>銅牌會員</span>
+                  <i class="bi bi-trophy-fill text-bronze"></i>
+                  <% } else if (moto.owner_type === 'silver') { %>
+                  <span>銀牌會員</span>
+                  <i class="bi bi-trophy-fill text-silver"></i>
+                  <% } else if (moto.owner_type === 'gold') { %>
+                  <span>金牌會員</span>
+                  <i class="bi bi-trophy-fill text-gold"></i>
+                  <% } %>
+                </div>
+              </div>
+              <div class="col col-md-6 border p-1">
+                <div class="fw-bold">上次來店</div>
                 <div><%=moto.updatedAt %></div>
               </div>
             </div>
@@ -44,7 +66,9 @@
         <div class="card">
           <div class="d-flex card-header justify-content-between align-items-center">
             <span>來店時間軸</span>
-            <button id="add-timeline" class="btn btn-outline-success btn-sm" type="button"><i class="bi bi-plus"></i>新增</button>
+            <button id="add-timeline" class="btn btn-outline-success btn-sm" type="button">
+              <i class="bi bi-plus"></i>新增
+            </button>
           </div>
           <div class="card-body" style="background-color: #efefef">
             <div class="">

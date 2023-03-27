@@ -10,6 +10,6 @@ module.exports = class RecordRepo {
       .exec();
   }
   static async delete(id) {
-    return RecordModel.deleteOne({ _id: id }).lean().exec();
+    return RecordModel.findOneAndDelete({ _id: id }).lean().exec();
   }
 };

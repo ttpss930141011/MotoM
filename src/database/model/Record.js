@@ -1,24 +1,10 @@
 const { Schema, model } = require('mongoose');
 const MotoRepo = require('../repository/MotoRepo');
 const Logger = require('../../core/Logger');
-
+const { SERVICE_TYPE } = require('../../config');
 const DOCUMENT_NAME = 'Record';
 const COLLECTION_NAME = 'records';
-const SERVICE_TYPE = {
-  CREATED: 'CREATED',
-  UPDATED: 'UPDATED',
-  REPAIR: 'REPAIR', // 維修
-  MAINTAIN: 'MAINTAIN', // 保養
-  SALES: 'SALES', // 銷售
-  RENTAL: 'RENTAL', // 租賃
-  PARTS: 'PARTS', // 零件
-  ACCESSORIES: 'ACCESSORIES', // 配件
-  INSURANCE: 'INSURANCE', // 保險
-  CLAIMS: 'CLAIMS', // 理賠
-  ACCIDENT: 'ACCIDENT', // 事故
-  INSPECTION: 'INSPECTION', // 檢驗
-  OTHER: 'OTHER', // 其他
-};
+
 const schema = new Schema(
   {
     moto_id: {
@@ -75,16 +61,12 @@ const schema = new Schema(
   },
 ).index({ motoId: 1, createdAt: -1 });
 
-schema.post('deleteOne', async function (doc) {
+schema.post('findOneAndDelete', async function (doc) {
   const record = doc;
-  const moto = await MotoRepo.findById(record.moto_id);
-  if (!moto) {
-    Logger.error('Cannot find corresponding moto');
-    return;
-  }
-  moto.records.pull(record._id);
-  await moto.save();
+  if (!record) return;
+  const tenp = await MotoRepo.pullRecord(record.moto_id, record._id);
+  console.log(tenp);
 });
 const RecordModel = model(DOCUMENT_NAME, schema, COLLECTION_NAME);
 
-module.exports = { RecordModel, SERVICE_TYPE };
+module.exports = { RecordModel };
