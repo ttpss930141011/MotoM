@@ -1,15 +1,13 @@
-const { RecordModel } = require('../model/Record');
+const RecordModel = require('../model/Record');
 
 module.exports = class RecordRepo {
-  static async create(record) {
-    return RecordModel.create(record);
+  static async create(record, session = null) {
+    return RecordModel.create([record], { session });
   }
   static async update(record) {
-    return RecordModel.updateOne({ _id: record._id }, { $set: { ...record } })
-      .lean()
-      .exec();
+    return RecordModel.findOneAndUpdate({ _id: record._id }, record).lean().exec();
   }
-  static async delete(id) {
-    return RecordModel.findOneAndDelete({ _id: id }).lean().exec();
+  static async delete(id, session = null) {
+    return RecordModel.findOneAndDelete({ _id: id }, { session }).lean().exec();
   }
 };

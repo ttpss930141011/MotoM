@@ -9,6 +9,7 @@ const { validator, ValidationSource } = require('../../helpers/validator');
 const { RoleCode } = require('../../database/model/Role');
 const role = require('../../helpers/role');
 const authorization = require('../../auth/authorization');
+const { startSession } = require('mongoose');
 
 router.post(
   '/',
@@ -16,9 +17,19 @@ router.post(
   asyncHandler(async (req, res) => {
     const { mototId, action, message, price } = req.body;
     const record = { moto_id: mototId, action, message, price, served_by: req.user._id };
-    const createdRecord = await RecordRepo.create(record);
-    const updatedMoto = await MotoRepo.updateRecord(mototId, createdRecord._id);
-    return new SuccessResponse('success', updatedMoto).send(res);
+    const session = await startSession();
+    session.startTransaction();
+    try {
+      const createdRecord = await RecordRepo.create(record);
+      const updatedMoto = await MotoRepo.pushRecord(mototId, createdRecord._id);
+      await session.commitTransaction();
+      return new SuccessResponse('success', updatedMoto).send(res);
+    } catch (err) {
+      await session.abortTransaction();
+      next(err);
+    } finally {
+      session.endSession();
+    }
   }),
 );
 

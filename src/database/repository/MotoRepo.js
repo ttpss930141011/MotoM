@@ -28,21 +28,19 @@ module.exports = class MotoRepo {
       .exec();
   }
 
-  static async create(moto) {
-    return MotoModel.create(moto);
+  static async create(moto, session = null) {
+    return MotoModel.create([moto], { session });
   }
-  static async update(moto) {
-    return MotoModel.updateOne({ _id: moto._id }, { $set: { ...moto } })
-      .lean()
-      .exec();
-  }
-  static async updateRecord(motoId, recordId) {
-    return MotoModel.findOneAndUpdate({ _id: motoId }, { $push: { records: recordId } }, { new: true })
+
+  static async update(moto, session = null) {
+    return MotoModel.findOneAndUpdate({ _id: moto._id }, { $set: { ...moto } }, { new: true, session })
       .lean()
       .exec();
   }
 
-  static async pullRecord(motoId, recordId) {
-    return await MotoModel.findOneAndUpdate({ _id: motoId }, { $pull: { records: recordId } });
+  static async pushRecord(motoId, recordId, session = null) {
+    return MotoModel.findOneAndUpdate({ _id: motoId }, { $push: { records: recordId } }, { new: true, session })
+      .lean()
+      .exec();
   }
 };

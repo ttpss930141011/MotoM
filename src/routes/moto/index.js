@@ -10,10 +10,11 @@ const _ = require('lodash');
 const { validator, ValidationSource } = require('../../helpers/validator');
 const authentication = require('../../auth/authentication');
 const dayjs = require('dayjs');
-const { SERVICE_TYPE } = require('../../database/model/Record');
+const { SERVICE_TYPE } = require('../../config');
 const { RoleCode } = require('../../database/model/Role');
 const role = require('../../helpers/role');
-const authorization  = require('../../auth/authorization');
+const authorization = require('../../auth/authorization');
+const { startSession } = require('mongoose');
 
 // 客戶列表頁面路由
 router.get(
@@ -37,15 +38,28 @@ router.post(
     if (!license_no || !owner_name) throw new BadRequestError(err);
     const moto = await MotoRepo.findByLicenseNo(license_no);
     if (!_.isEmpty(moto)) throw new BadRequestError('license_no already exists');
-    const createdMoto = await MotoRepo.create({ license_no, owner_name, owner_phone });
-    const createdRecord = await RecordRepo.create({
-      moto_id: createdMoto._id,
-      action: SERVICE_TYPE.CREATED,
-      served_by: req.user._id,
-      message: `建立了車牌號碼為 ${license_no} 的車輛資料`,
-    });
-    const updatedMoto = await MotoRepo.updateRecord(createdMoto._id, createdRecord._id);
-    return new SuccessResponse('success', updatedMoto).send(res);
+    const session = await startSession();
+    session.startTransaction();
+    try {
+      const createdMoto = await MotoRepo.create({ license_no, owner_name, owner_phone }, session);
+      const createdRecord = await RecordRepo.create(
+        {
+          moto_id: createdMoto._id,
+          action: SERVICE_TYPE.CREATED,
+          served_by: req.user._id,
+          message: `建立了車牌號碼為 ${license_no} 的車輛資料`,
+        },
+        session,
+      );
+      const updatedMoto = await MotoRepo.pushRecord(createdMoto._id, createdRecord._id, session);
+      await session.commitTransaction();
+      return new SuccessResponse('success', updatedMoto).send(res);
+    } catch (err) {
+      await session.abortTransaction();
+      throw new BadRequestError(err);
+    } finally {
+      session.endSession();
+    }
   }),
 );
 
@@ -76,15 +90,28 @@ router.put(
         電話: ${owner_phone}
       `,
     };
-    const createdRecord = await RecordRepo.create(record);
-    const updatedMoto = await MotoRepo.update({
-      _id: id,
-      license_no,
-      owner_name,
-      owner_phone,
-      records: [...moto.records, createdRecord._id],
-    });
-    return new SuccessResponse('success', updatedMoto).send(res);
+    const session = await startSession();
+    session.startTransaction();
+    try {
+      const createdRecord = await RecordRepo.create(record, session);
+      const updatedMoto = await MotoRepo.update(
+        {
+          _id: id,
+          license_no,
+          owner_name,
+          owner_phone,
+          records: [...moto.records, createdRecord._id],
+        },
+        session,
+      );
+      await session.commitTransaction();
+      return new SuccessResponse('success', updatedMoto).send(res);
+    } catch (err) {
+      await session.abortTransaction();
+      throw new BadRequestError(err);
+    } finally {
+      session.endSession();
+    }
   }),
 );
 
