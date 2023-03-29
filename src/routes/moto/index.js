@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const MotoRepo = require('../../database/repository/MotoRepo');
 const RecordRepo = require('../../database/repository/RecordRepo');
+const RevenueRepo = require('../../database/repository/RevenueRepo');
 const schema = require('./schema');
 const { BadRequestError } = require('../../core/ApiError');
 const { SuccessResponse } = require('../../core/ApiResponse');
@@ -14,9 +15,18 @@ const { SERVICE_TYPE } = require('../../config');
 const { RoleCode } = require('../../database/model/Role');
 const role = require('../../helpers/role');
 const authorization = require('../../auth/authorization');
-const { startSession } = require('mongoose');
+const { startSession, Types } = require('mongoose');
 
 // 客戶列表頁面路由
+
+router.get(
+  '/',
+  authentication,
+  asyncHandler(async (req, res) => {
+    res.redirect('/search');
+  }),
+);
+
 router.get(
   '/:license_no',
   validator(schema.find, ValidationSource.PARAM),
@@ -41,20 +51,24 @@ router.post(
     const session = await startSession();
     session.startTransaction();
     try {
-      const createdMoto = await MotoRepo.create({ license_no, owner_name, owner_phone }, session);
-      const createdRecord = await RecordRepo.create(
-        {
-          moto_id: createdMoto._id,
-          action: SERVICE_TYPE.CREATED,
-          served_by: req.user._id,
-          message: `建立了車牌號碼為 ${license_no} 的車輛資料`,
-        },
+      const recordId = Types.ObjectId();
+      const [createdMoto] = await MotoRepo.create(
+        { license_no, owner_name, owner_phone, records: [recordId] },
         session,
       );
-      const updatedMoto = await MotoRepo.pushRecord(createdMoto._id, createdRecord._id, session);
+      const record = {
+        _id: recordId,
+        moto_id: createdMoto._id,
+        action: SERVICE_TYPE.CREATED,
+        served_by: req.user._id,
+        message: `建立了車牌號碼為 ${license_no} 的車輛資料`,
+      };
+      const [createdRecord] = await RecordRepo.create(record, session);
+      const revenue = await RevenueRepo.upsert(createdRecord, session);
       await session.commitTransaction();
-      return new SuccessResponse('success', updatedMoto).send(res);
+      return new SuccessResponse('success', createdMoto).send(res);
     } catch (err) {
+      console.log(err);
       await session.abortTransaction();
       throw new BadRequestError(err);
     } finally {
@@ -93,7 +107,7 @@ router.put(
     const session = await startSession();
     session.startTransaction();
     try {
-      const createdRecord = await RecordRepo.create(record, session);
+      const [createdRecord] = await RecordRepo.create(record, session);
       const updatedMoto = await MotoRepo.update(
         {
           _id: id,

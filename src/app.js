@@ -125,6 +125,7 @@ app.use((req, res, next) => next(new NotFoundError()));
 /*---------------------------------------------------------*/
 // Middleware Error Handler
 app.use((err, req, res, next) => {
+  console.log(err)
   Logger.error(`500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
   Logger.error(err);
   if (err instanceof ApiError) return ApiError.handle(err, res);

@@ -1,9 +1,5 @@
 const { Schema, model } = require('mongoose');
-const MotoRepo = require('../repository/MotoRepo');
-const Logger = require('../../core/Logger');
 const { SERVICE_TYPE } = require('../../config');
-const RevenueRepo = require('../repository/RevenueRepo');
-const { BadRequestError } = require('../../core/ApiError');
 
 const DOCUMENT_NAME = 'Record';
 const COLLECTION_NAME = 'records';
@@ -63,38 +59,6 @@ const schema = new Schema(
     timestamps: true,
   },
 ).index({ motoId: 1, createdAt: -1 });
-
-// upsert record to revenue
-async function updateRevenue(doc, next) {
-  try {
-    const record = doc;
-    if (!record) return;
-    const revenue = await RevenueRepo.upsert(record);
-    console.log('Updated revenue:', revenue);
-    next();
-  } catch (error) {
-    console.error('Failed to update revenue:', error);
-    next(error);
-  }
-}
-
-schema.post('save', updateRevenue);
-schema.post('findOneAndUpdate', updateRevenue);
-schema.post('findOneAndDelete', async function (doc, next) {
-  const session = this.$session();
-  try {
-    const record = doc;
-    if (!record) return;
-    console.log('session:', session);
-    await RevenueRepo.pull(record, session);
-    await MotoRepo.pushRecord(record.moto_id, record._id, session);
-    Logger.info('Deleted revenue:', record);
-    next();
-  } catch (err) {
-    Logger.error('Failed to delete revenue:', err);
-    next(new BadRequestError(err));
-  }
-});
 
 const RecordModel = model(DOCUMENT_NAME, schema, COLLECTION_NAME);
 

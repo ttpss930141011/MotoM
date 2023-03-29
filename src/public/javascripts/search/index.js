@@ -73,6 +73,7 @@ $(function () {
                   error: async (xhr, status, error) => {
                     // 顯示錯誤訊息
                     Swal.hideLoading() 
+                    console.log('error', xhr.responseJSON.message);
                     return Swal.showValidationMessage(`Request failed: ${xhr.responseJSON.message}`);
                   },
                 });

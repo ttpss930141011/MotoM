@@ -43,6 +43,14 @@ const MOTOSERVICE_TYPE = {
   OTHER: '其他業務', // 其他
 };
 
+const OWNER_TYPE = {
+  NEW: 'new',
+  BRONZE: 'bronze',
+  SILVER: 'silver',
+  GOLD: 'gold',
+};
+
+
 module.exports = {
   environment,
   port,
@@ -52,5 +60,6 @@ module.exports = {
   corsUrl,
   logDirectory,
   SERVICE_TYPE,
-  MOTOSERVICE_TYPE
+  MOTOSERVICE_TYPE,
+  OWNER_TYPE
 };

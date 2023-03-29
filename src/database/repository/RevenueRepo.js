@@ -1,7 +1,7 @@
 const RevenueModel = require('../model/Revenue');
 
 module.exports = class RevenueRepo {
-  static async upsert(record) {
+  static async upsert(record, session = null) {
     const date = new Date(record.createdAt);
     date.setHours(0, 0, 0, 0);
     const revenue = await RevenueModel.findOneAndUpdate(
@@ -17,7 +17,7 @@ module.exports = class RevenueRepo {
           date,
         },
       },
-      { upsert: true, new: true },
+      { upsert: true, new: true, session },
     );
     return revenue.toObject();
   }
@@ -28,7 +28,27 @@ module.exports = class RevenueRepo {
     return RevenueModel.findOneAndDelete({ _id: id }).lean().exec();
   }
 
-  static async pull(record, session = null) {
+  // minus old record and add new record
+  static async pull(oldRecord, newRecord, session = null) {
+    const date = new Date(oldRecord.createdAt);
+    date.setHours(0, 0, 0, 0);
+    console.log(oldRecord, newRecord);
+    const revenue = await RevenueModel.findOneAndUpdate(
+      { date },
+      {
+        $inc: {
+          total_revenue: -oldRecord.price + newRecord.price,
+          total_motos: 0,
+          new_motos: oldRecord.action === 'CREATED' ? -1 : 0,
+          [`type_revenue.${oldRecord.action}`]: -oldRecord.price,
+          [`type_revenue.${newRecord.action}`]: newRecord.price,
+        },
+      },
+      { upsert: true, new: true, session },
+    );
+  }
+
+  static async delete(record, session = null) {
     const date = new Date(record.createdAt);
     date.setHours(0, 0, 0, 0);
     const revenue = await RevenueModel.findOneAndUpdate(
