@@ -3,7 +3,6 @@ const { OWNER_TYPE } = require('../../config');
 const DOCUMENT_NAME = 'Moto';
 const COLLECTION_NAME = 'motos';
 
-
 const schema = new Schema(
   {
     license_no: {
@@ -28,6 +27,7 @@ const schema = new Schema(
         },
       ],
       // required: true,
+      default: [],
       select: false,
     },
     owner_type: {

@@ -10,7 +10,6 @@ const schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Moto',
       required: true,
-      select: false,
     },
     action: {
       type: Schema.Types.String,

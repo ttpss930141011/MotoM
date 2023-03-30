@@ -14,6 +14,18 @@ module.exports = class MotoRepo {
       .exec();
   }
 
+  static async findByIdWithLastRecords(id, session = null) {
+    return MotoModel.findById(id, {}, { session })
+      .select('+records')
+      .select({ records: { $slice: -1 } })
+      .populate({
+        path: 'records',
+        match: { status: true },
+      })
+      .lean()
+      .exec();
+  }
+
   static async findAll() {
     return MotoModel.find({}).lean().exec();
   }

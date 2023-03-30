@@ -11,7 +11,7 @@ const { validator, ValidationSource } = require('../../helpers/validator');
 const { RoleCode } = require('../../database/model/Role');
 const role = require('../../helpers/role');
 const authorization = require('../../auth/authorization');
-const { startSession } = require('mongoose');
+const { startSession, Types } = require('mongoose');
 const Logger = require('../../core/Logger');
 
 router.post(
@@ -24,9 +24,9 @@ router.post(
     session.startTransaction();
     try {
       const [createdRecord] = await RecordRepo.create(record, session);
-      const revenue = await RevenueRepo.upsert(createdRecord, session);
       const updatedMoto = await MotoRepo.pushRecord(mototId, createdRecord._id, session);
-      const updatedOwnerType = await MotoRepo.updateOwnerType(mototId, session);
+      await RevenueRepo.upsert(createdRecord, session);
+      await MotoRepo.updateOwnerType(mototId, session);
       await session.commitTransaction();
       return new SuccessResponse('success', updatedMoto).send(res);
     } catch (err) {
@@ -52,12 +52,18 @@ router.put(
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { action, message, price, server } = req.body;
-    const newRecord = { _id: id, action, message, price: Number(price), served_by: server };
+    const newRecord = {
+      _id: Types.ObjectId(id),
+      action,
+      message,
+      price: Number(price),
+      served_by: Types.ObjectId(server),
+    };
     const session = await startSession();
     session.startTransaction();
     try {
       const oldRecord = await RecordRepo.update(newRecord, session);
-      const revenue = await RevenueRepo.pull(oldRecord, newRecord, session);
+      await RevenueRepo.update(oldRecord, newRecord, session);
       await session.commitTransaction();
       return new SuccessResponse('success', newRecord).send(res);
     } catch (err) {
@@ -80,12 +86,12 @@ router.delete(
     session.startTransaction();
     try {
       const deletedRecord = await RecordRepo.delete(id, session);
-      await RevenueRepo.delete(deletedRecord, session);
+      await RevenueRepo.deleteRecord(deletedRecord, session);
       await MotoRepo.pullRecord(deletedRecord.moto_id, deletedRecord._id, session);
+      await MotoRepo.updateOwnerType(deletedRecord.moto_id, session);
       await session.commitTransaction();
       return new SuccessResponse('success', deletedRecord).send(res);
     } catch (err) {
-      console.log(err);
       await session.abortTransaction();
       Logger.error('Failed to delete revenue:', err);
       throw new BadRequestError(err);

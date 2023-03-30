@@ -1,68 +1,93 @@
 const RevenueModel = require('../model/Revenue');
-
+const { SERVICE_TYPE } = require('../../config');
+const RecordRepo = require('./RecordRepo');
 module.exports = class RevenueRepo {
+  // 將這筆紀錄加入到當日的收入中，total_motos、new_motos是array，所以要用$push推入record的moto_id，是否為新車則用action判斷，
+  // type_revenue則是object，裡面分別記錄了每個action的營收
+  // 如果total_motos、new_motos內的objectId已經存在，則不會重複push
+  // 如果這日期存在，則需要 push total_motos、new_motos與增加type_revenue內、total_revenue的營收
+  // 如果這日期不存在，則需要新增一筆資料，並且push total_motos、new_motos與增加type_revenue內、total_revenue的營收
   static async upsert(record, session = null) {
     const date = new Date(record.createdAt);
     date.setHours(0, 0, 0, 0);
-    const revenue = await RevenueModel.findOneAndUpdate(
-      { date },
-      {
-        $inc: {
-          total_revenue: record.price,
-          total_motos: 1,
-          new_motos: record.action === 'CREATED' ? 1 : 0,
-          [`type_revenue.${record.action}`]: record.price,
-        },
-        $setOnInsert: {
-          date,
-        },
+    const { action, price, moto_id } = record;
+    const update = {
+      $addToSet: {
+        total_motos: moto_id,
       },
-      { upsert: true, new: true, session },
-    );
-    return revenue.toObject();
+      $inc: {
+        [`type_revenue.${action}`]: price,
+        total_revenue: price,
+      },
+    };
+    if ([SERVICE_TYPE.CREATED].includes(action)) {
+      update.$addToSet.new_motos = moto_id;
+    }
+    return RevenueModel.findOneAndUpdate({ date }, update, { upsert: true, new: true, session }).lean().exec();
   }
-  static async update(record) {
-    return RevenueModel.findOneAndUpdate({ _id: record._id }, record).lean().exec();
-  }
-  static async delete(id) {
-    return RevenueModel.findOneAndDelete({ _id: id }).lean().exec();
-  }
-
-  // minus old record and add new record
-  static async pull(oldRecord, newRecord, session = null) {
+  // minus old record and add new record，如果這筆紀錄是新車，則new_motos要把這筆紀錄的moto_id從array中移除
+  static async update(oldRecord, newRecord, session = null) {
     const date = new Date(oldRecord.createdAt);
     date.setHours(0, 0, 0, 0);
-    console.log(oldRecord, newRecord);
-    const revenue = await RevenueModel.findOneAndUpdate(
+    const incObj = {
+      total_revenue: -oldRecord.price + newRecord.price,
+      [`type_revenue.${oldRecord.action}`]: -oldRecord.price,
+    };
+    if (oldRecord.action === newRecord.action) {
+      incObj[`type_revenue.${newRecord.action}`] = newRecord.price - oldRecord.price;
+    } else {
+      incObj[`type_revenue.${newRecord.action}`] = newRecord.price;
+    }
+    //如果這筆紀錄是新車，但是更新後不是新車，則new_motos要把這筆紀錄的moto_id從array中移除
+    const pullObj = {};
+    if (oldRecord.action === SERVICE_TYPE.CREATED) {
+      pullObj.new_motos = oldRecord.moto_id;
+    }
+    //如果這筆紀錄不是新車，但是更新後是新車，則new_motos要把這筆紀錄的moto_id加入到array中
+    const addToSetObj = {};
+    if (newRecord.action === SERVICE_TYPE.CREATED) {
+      addToSetObj.new_motos = newRecord.moto_id;
+    }
+    return RevenueModel.findOneAndUpdate(
       { date },
       {
-        $inc: {
-          total_revenue: -oldRecord.price + newRecord.price,
-          total_motos: 0,
-          new_motos: oldRecord.action === 'CREATED' ? -1 : 0,
-          [`type_revenue.${oldRecord.action}`]: -oldRecord.price,
-          [`type_revenue.${newRecord.action}`]: newRecord.price,
-        },
+        $inc: incObj,
+        $pull: pullObj,
+        $addToSet: addToSetObj,
       },
-      { upsert: true, new: true, session },
-    );
+      { new: true, session },
+    )
+      .lean()
+      .exec();
   }
-
-  static async delete(record, session = null) {
+  // 刪除record，要把total_revenue、type_revenue內的營收減掉，並且把total_motos、new_motos內的moto_id移除
+  // 使用Record countMotoRecordsInDateRange來判斷是否要移除total_motos、new_motos
+  // 因為要確定這筆紀錄的moto_id在當天有沒有其他的紀錄，如果有的話，就不能移除
+  static async deleteRecord(record, session = null) {
     const date = new Date(record.createdAt);
     date.setHours(0, 0, 0, 0);
-    const revenue = await RevenueModel.findOneAndUpdate(
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    const { action, price, moto_id } = record;
+    const incObj = {
+      total_revenue: -price,
+      [`type_revenue.${action}`]: -price,
+    };
+    const count = await RecordRepo.countMotoRecordsInDateRange(moto_id, date, endOfDay, session);
+    const pullObj = {};
+    if (count === 0) {
+      pullObj.total_motos = moto_id;
+      if (action === SERVICE_TYPE.CREATED) {
+        pullObj.new_motos = moto_id;
+      }
+    }
+    return RevenueModel.findOneAndUpdate(
       { date },
       {
-        $inc: {
-          total_revenue: -record.price,
-          total_motos: -1,
-          new_motos: record.action === 'CREATED' ? -1 : 0,
-          [`type_revenue.${record.action}`]: -record.price,
-        },
+        $inc: incObj,
+        $pull: pullObj,
       },
-      { upsert: true, new: true, session },
+      { new: true, session },
     );
-    return revenue.toObject();
   }
 };

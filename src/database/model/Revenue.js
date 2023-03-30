@@ -19,18 +19,24 @@ const schema = new Schema(
       max: 1000000000,
     },
     total_motos: {
-      type: Schema.Types.Number,
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: 'Moto',
+        },
+      ],
       required: true,
-      default: 0,
-      min: 0,
-      max: 1000000,
+      default: [],
     },
     new_motos: {
-      type: Schema.Types.Number,
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: 'Moto',
+        },
+      ],
       required: true,
-      default: 0,
-      min: 0,
-      max: 1000000,
+      default: [],
     },
     type_revenue: {
       REPAIR: {
@@ -110,8 +116,6 @@ const schema = new Schema(
     timestamps: true,
   },
 ).index({ date: 1, createdAt: -1 });
-
-
 
 const RevenueModel = model(DOCUMENT_NAME, schema, COLLECTION_NAME);
 
