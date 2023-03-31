@@ -19,6 +19,12 @@ const schema = new Schema(
     owner_phone: {
       type: String,
     },
+    owner_birthmonth: {
+      type: Number,
+    },
+    owner_birthday: {
+      type: Number,
+    },
     records: {
       type: [
         {

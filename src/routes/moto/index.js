@@ -44,7 +44,7 @@ router.post(
   validator(schema.create),
   authentication,
   asyncHandler(async (req, res, next) => {
-    const { license_no, owner_name, owner_phone = '' } = req.body;
+    const { license_no, owner_name, owner_phone = '', owner_birthmonth = 0, owner_birthday = 0 } = req.body;
     if (!license_no || !owner_name) throw new BadRequestError(err);
     const moto = await MotoRepo.findByLicenseNo(license_no);
     if (!_.isEmpty(moto)) throw new BadRequestError('license_no already exists');
@@ -52,10 +52,17 @@ router.post(
     session.startTransaction();
     try {
       const recordId = Types.ObjectId();
-      const [createdMoto] = await MotoRepo.create(
-        { license_no, owner_name, owner_phone, records: [recordId] },
-        session,
-      );
+      const newMoto = {
+        license_no,
+        owner_name,
+        owner_phone,
+        records: [recordId],
+      };
+      if (owner_birthmonth && owner_birthday) {
+        newMoto.owner_birthmonth = Number(owner_birthmonth);
+        newMoto.owner_birthday = Number(owner_birthday);
+      }
+      const [createdMoto] = await MotoRepo.create(newMoto, session);
       const record = {
         _id: recordId,
         moto_id: createdMoto._id,
@@ -77,17 +84,14 @@ router.post(
   }),
 );
 
-/*-------------------------------------------------------------------------*/
-// Below all APIs are private APIs protected for admin's role
-router.use('/', role(RoleCode.ADMIN), authorization);
-/*-------------------------------------------------------------------------*/
+
 router.put(
   '/:id',
   validator(schema.id, ValidationSource.PARAM),
   validator(schema.put),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { owner_name, owner_phone = '', license_no } = req.body;
+    const { owner_name, owner_phone = '', license_no, owner_birthmonth = 0, owner_birthday = 0 } = req.body;
     const moto = await MotoRepo.findById(id);
     if (_.isEmpty(moto)) throw new BadRequestError('not found');
     const record = {
@@ -104,20 +108,22 @@ router.put(
         電話: ${owner_phone}
       `,
     };
+    const newMoto = {
+      _id: id,
+      license_no,
+      owner_name,
+      owner_phone,
+      records: [...moto.records, record._id],
+    };
+    if (owner_birthmonth && owner_birthday) {
+      newMoto.owner_birthmonth = Number(owner_birthmonth);
+      newMoto.owner_birthday = Number(owner_birthday);
+    }
     const session = await startSession();
     session.startTransaction();
     try {
       const [createdRecord] = await RecordRepo.create(record, session);
-      const updatedMoto = await MotoRepo.update(
-        {
-          _id: id,
-          license_no,
-          owner_name,
-          owner_phone,
-          records: [...moto.records, createdRecord._id],
-        },
-        session,
-      );
+      const updatedMoto = await MotoRepo.update(newMoto, session);
       await session.commitTransaction();
       return new SuccessResponse('success', updatedMoto).send(res);
     } catch (err) {
@@ -128,7 +134,10 @@ router.put(
     }
   }),
 );
-
+/*-------------------------------------------------------------------------*/
+// Below all APIs are private APIs protected for admin's role
+router.use('/', role(RoleCode.ADMIN), authorization);
+/*-------------------------------------------------------------------------*/
 // 單一客戶詳細資料頁面路由
 // router.get('/customers/:id', customers.show);
 

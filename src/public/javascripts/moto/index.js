@@ -210,6 +210,18 @@ $(document).ready(function () {
     const license_no = $('#license_no').text();
     const owner_name = $('#owner_name').text();
     const owner_phone = $('#owner_phone').text();
+    const owner_birthmonth = $('#owner_birthmonth').text();
+    const owner_birthday = $('#owner_birthday').text();
+    const birthmonthOptionsString = Array.from(Array(12)).reduce((acc, _, index) => {
+      const month = index + 1;
+      const selected = month === Number(owner_birthmonth) ? 'selected' : '';
+      return acc + `<option value="${month}" ${selected}>${month}</option>`;
+    }, '');
+    const birthdayOptionsString = Array.from(Array(31)).reduce((acc, _, index) => {
+      const day = index + 1;
+      const selected = day === Number(owner_birthday) ? 'selected' : '';
+      return acc + `<option value="${day}" ${selected}>${day}</option>`;
+    }, '');
     const { value: formValues } = await Swal.fire({
       title: '更新客戶資料',
       html: `
@@ -222,6 +234,26 @@ $(document).ready(function () {
                 <input id="new_owner_phone" class="form-control" value="${owner_phone}">
                 <label for="floatingInput">顧客電話(選填)</label>
               </div>
+              <div class="row">
+                <div class="col-sm-6">
+                  <div class="form-floating mb-3">
+                    <select id="new_owner_birthmonth" class="form-select" placeholder="出生月(選填)">
+                      <option value="0" ${owner_birthmonth ? 'selected' : ''}>不提供</option>
+                      ${birthmonthOptionsString} 
+                    </select>
+                    <label for="floatingInput">出生月(選填)</label>
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="form-floating mb-3">
+                    <select id="new_owner_birthday" class="form-select" placeholder="出生日(選填)">
+                      <option value="0" ${owner_birthday ? 'selected' : ''}>不提供</option>
+                      ${birthdayOptionsString}
+                    </select>
+                    <label for="floatingInput">出生日(選填)</label>
+                  </div>
+                </div>
+              </div>
             </div>
             `,
       focusConfirm: false,
@@ -232,13 +264,15 @@ $(document).ready(function () {
       preConfirm: () => {
         const owner_name = document.getElementById('new_owner_name').value;
         const owner_phone = document.getElementById('new_owner_phone').value;
+        const owner_birthmonth = document.getElementById('new_owner_birthmonth').value;
+        const owner_birthday = document.getElementById('new_owner_birthday').value;
         if (!owner_name) {
           Swal.showValidationMessage(`請輸入顧客稱呼`);
         } else {
           $.ajax({
             type: 'PUT',
             url: `/moto/${motoId}`,
-            data: { license_no, owner_name, owner_phone },
+            data: { license_no, owner_name, owner_phone, owner_birthmonth, owner_birthday },
             success: function (data) {
               let timerInterval;
               Swal.fire({
