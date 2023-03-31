@@ -4,6 +4,13 @@ const { SERVICE_TYPE } = require('../../config');
 const DOCUMENT_NAME = 'Revenue';
 const COLLECTION_NAME = 'revenues';
 
+// 今天的九點
+const defaultStartWorkTime = new Date();
+defaultStartWorkTime.setHours(9, 0, 0, 0);
+
+const defaultEndWorkTime = new Date();
+defaultEndWorkTime.setHours(21, 0, 0, 0);
+
 const schema = new Schema(
   {
     date: {
@@ -37,6 +44,19 @@ const schema = new Schema(
       ],
       required: true,
       default: [],
+    },
+    start_work_time: {
+      type: Schema.Types.Date,
+      default: defaultStartWorkTime,
+    },
+    end_work_time: {
+      type: Schema.Types.Date,
+      default: defaultEndWorkTime,
+    },
+    // 是否有開店
+    is_open: {
+      type: Schema.Types.Boolean,
+      default: true,
     },
     type_revenue: {
       REPAIR: {

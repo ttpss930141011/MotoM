@@ -1,7 +1,24 @@
 const RevenueModel = require('../model/Revenue');
 const { SERVICE_TYPE } = require('../../config');
 const RecordRepo = require('./RecordRepo');
+
 module.exports = class RevenueRepo {
+  static async create(revenue, session = null) {
+    return RevenueModel.create(revenue, { session });
+  }
+  static async findOneByDateAndUpsert(revenue, session = null) {
+    return RevenueModel.findOneAndUpdate(
+      { date: revenue.date },
+      {
+        $setOnInsert: { date: revenue.date },
+        $set: { start_work_time: revenue.start_work_time, end_work_time: revenue.end_work_time },
+      },
+      { upsert: true, new: true, session },
+    )
+      .lean()
+      .exec();
+  }
+
   // 將這筆紀錄加入到當日的收入中，total_motos、new_motos是array，所以要用$push推入record的moto_id，是否為新車則用action判斷，
   // type_revenue則是object，裡面分別記錄了每個action的營收
   // 如果total_motos、new_motos內的objectId已經存在，則不會重複push
@@ -89,5 +106,15 @@ module.exports = class RevenueRepo {
       },
       { new: true, session },
     );
+  }
+
+  static async workTimeUpsert(date, start_work_time, end_work_time, session = null) {
+    return RevenueModel.findOneAndUpdate(
+      { date },
+      { $setOnInsert: { date, start_work_time, end_work_time } },
+      { upsert: true, new: true },
+    )
+      .lean()
+      .exec();
   }
 };
