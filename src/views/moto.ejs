@@ -32,14 +32,24 @@
               </div>
               <div class="col col-md-3 border p-1">
                 <div class="fw-bold">聯絡方式</div>
+                <!--如果moto.owner_phone為空，則顯示"不提供"-->
+                <% if (moto.owner_phone === '') { %>
+                <div id="owner_phone">不提供</div>
+                <% } else { %>
                 <div id="owner_phone"><%=moto.owner_phone %></div>
+                <% } %>
               </div>
               <div class="col col-md-3 border p-1">
                 <div class="fw-bold">生日</div>
                 <div>
+                  <!--如果moto.owner_birthmonth或moto.owner_birthday等於0，則顯示"不提供"-->
+                  <% if (moto.owner_birthmonth === 0 || moto.owner_birthday === 0) { %>
+                  <span>不提供</span>
+                  <% } else { %>
                   <span id="owner_birthmonth"><%=moto.owner_birthmonth %></span>
                   /
                   <span id="owner_birthday"><%=moto.owner_birthday %></span>
+                  <% } %>
                 </div>
               </div>
               <div class="col col-md-6 border p-1">
@@ -57,6 +67,8 @@
                   <% } else if (moto.owner_type === 'gold') { %>
                   <span>金牌會員</span>
                   <i class="bi bi-trophy-fill text-gold"></i>
+                  <% } else { %>
+                  <span>未知</span>
                   <% } %>
                 </div>
               </div>

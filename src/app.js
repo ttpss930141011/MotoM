@@ -6,7 +6,7 @@ const Logger = require('./core/Logger');
 const cors = require('cors');
 const flash = require('connect-flash');
 const helmet = require('helmet');
-const { corsUrl, environment, db } = require('./config');
+const { secret, corsUrl, environment, db } = require('./config');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const { ApiError } = require('./core/ApiError');
@@ -15,7 +15,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const favicon = require('express-favicon');
 const mongoose = require('./database')();
 const routesV1 = require('./routes');
-const UsersModel = require('./database/repository/UserRepo');
+const UserRepo = require('./database/repository/UserRepo');
 const { BadRequestError } = require('./core/ApiError');
 const bcrypt = require('bcryptjs');
 // routes import
@@ -39,7 +39,7 @@ app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon', 'favicon.ico
 // Use Session
 app.use(
   session({
-    secret: process.env.SECRET,
+    secret,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -58,7 +58,7 @@ passport.use(
   'login',
   new LocalStrategy(async (username, password, done) => {
     try {
-      const user = await UsersModel.findByUsername(username);
+      const user = await UserRepo.findByUsername(username);
       if (!user) return done(new BadRequestError('User not found'), false);
       if (!bcrypt.compareSync(password, user.password)) return done(new BadRequestError('Incorrect password'), false);
       return done(null, user);
@@ -75,10 +75,10 @@ passport.use(
     },
     async (req, username, password, done) => {
       try {
-        const existingUser = await UsersModel.findByUsername(username);
+        const existingUser = await UserRepo.findByUsername(username);
         if (existingUser) return done(new BadRequestError('User already exists'), false);
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await UsersModel.create(
+        const newUser = await UserRepo.create(
           {
             username: username,
             password: hashedPassword,

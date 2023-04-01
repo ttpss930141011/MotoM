@@ -70,8 +70,7 @@ module.exports = class UserRepo {
       .exec();
     if (!role) throw new InternalError('Role must be defined');
     user.roles = [role._id];
-    const createdUser = await UserModel.create(user);
-    return { user: createdUser.toObject() };
+    return UserModel.create(user);
   }
 
   static async update(user) {
