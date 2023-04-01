@@ -110,7 +110,8 @@ passport.deserializeUser((user, cb) => {
   });
 });
 /*-------------------------------------------------------------------------*/
-app.use(cors({ origin: corsUrl, optionsSuccessStatus: 200 }));
+// app.use(cors({ origin: corsUrl, optionsSuccessStatus: 200 }));
+app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -129,7 +130,7 @@ app.use((err, req, res, next) => {
   Logger.error(err);
   if (err instanceof ApiError) return ApiError.handle(err, res);
   if (environment === 'development') return res.status(500).send(err);
-  return ApiError.handle(new InternalError(), res);
+  return ApiError.handle(new InternalError(req), res);
 });
 
 module.exports = app;
