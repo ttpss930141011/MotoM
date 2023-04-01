@@ -13,12 +13,11 @@ const { ApiError } = require('./core/ApiError');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const favicon = require('express-favicon');
-const { Types } = require('mongoose');
 const mongoose = require('./database')();
 const routesV1 = require('./routes');
 const UsersModel = require('./database/repository/UserRepo');
 const { BadRequestError } = require('./core/ApiError');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 // routes import
 
 process.on('uncaughtException', (e) => {
