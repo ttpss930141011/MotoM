@@ -8,6 +8,10 @@ const UserSchema = new Schema(
       type: Schema.Types.String,
       required: true,
     },
+    displayname: {
+      type: Schema.Types.String,
+      required: true,
+    },
     password: {
       type: Schema.Types.String,
       required: true,

@@ -3,15 +3,29 @@ const { SERVICE_TYPE } = require('../../config');
 const RecordRepo = require('./RecordRepo');
 
 module.exports = class RevenueRepo {
+  static async getRevenueByDate(date) {
+    return RevenueModel.findOne({ date }).lean().exec();
+  }
+
+  static async getRevenueByMonth(month, year) {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 1);
+    return RevenueModel.find({ date: { $gte: start, $lt: end } })
+      .lean()
+      .exec();
+  }
+
   static async create(revenue, session = null) {
     return RevenueModel.create(revenue, { session });
   }
   static async findOneByDateAndUpsert(revenue, session = null) {
+    const update = { ...revenue }; // 将需要更新的属性展开到一个新的对象中
+    delete update.date; // 删除不需要更新的属性
     return RevenueModel.findOneAndUpdate(
       { date: revenue.date },
       {
         $setOnInsert: { date: revenue.date },
-        $set: { start_work_time: revenue.start_work_time, end_work_time: revenue.end_work_time },
+        $set: update,
       },
       { upsert: true, new: true, session },
     )

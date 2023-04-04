@@ -19,7 +19,9 @@ module.exports = class UserRepo {
   static findAllUsername() {
     return UserModel.find({ status: true }).select('username').lean().exec();
   }
-
+  static findByIdNotPopulate(id) {
+    return UserModel.findOne({ _id: id, status: true }).lean().exec();
+  }
   static findById(id) {
     return UserModel.findOne({ _id: id, status: true })
       .select('+password +roles')

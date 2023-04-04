@@ -15,12 +15,13 @@ const schema = require('./schema');
 router.get(
   '/',
   authentication,
+  validator(schema.getdate, ValidationSource.QUERY),
   asyncHandler(async (req, res, next) => {
     // 今天日期
-    const date = new Date()
+    const date = new Date(req.query.date);
     date.setHours(0, 0, 0, 0);
-    const revenue = await RevenueRepo.findOneByDateAndUpsert({ date });
-    // 將start_work_time從Date轉成hh:mm
+    const revenue = await RevenueRepo.getRevenueByDate(date);
+    if (!revenue) throw new BadRequestError('查無此日期');
     const start_work_time = new Date(revenue.start_work_time);
     const end_work_time = new Date(revenue.end_work_time);
     const start_work_time_hh = `0${start_work_time.getHours()}`.slice(-2);
@@ -29,8 +30,53 @@ router.get(
     const end_work_time_mm = `0${end_work_time.getMinutes()}`.slice(-2);
     revenue.start_work_time = `${start_work_time_hh}:${start_work_time_mm}`;
     revenue.end_work_time = `${end_work_time_hh}:${end_work_time_mm}`;
-    // console.log(revenue);
-    res.render('index', { revenue });
+    return new SuccessResponse('success', revenue).send(res);
+  }),
+);
+
+router.get(
+  '/month',
+  validator(schema.getdateByMonth, ValidationSource.QUERY),
+  authentication,
+  asyncHandler(async (req, res, next) => {
+    const { month, year} = req.query;
+    const revenue = await RevenueRepo.getRevenueByMonth(month, year);
+    return new SuccessResponse('success', revenue).send(res);
+  }),
+);
+
+// 更改上下班時間
+router.put(
+  '/worktime',
+  authentication,
+  validator(schema.worktime),
+  asyncHandler(async (req, res, next) => {
+    const { date, start_work_time, end_work_time } = req.body;
+    const dateTime = new Date(date);
+    dateTime.setHours(0, 0, 0, 0);
+    const revenue = await RevenueRepo.findOneByDateAndUpsert({
+      date: dateTime,
+      start_work_time: new Date(start_work_time),
+      end_work_time: new Date(end_work_time),
+    });
+    return new SuccessResponse('success', revenue).send(res);
+  }),
+);
+
+// 更新 RevenueRepo is_open 的值
+router.patch(
+  '/is_open',
+  authentication,
+  asyncHandler(async (req, res, next) => {
+    const { date, is_open } = req.body;
+    console.log(date, is_open);
+    const dateTime = new Date(date);
+    dateTime.setHours(0, 0, 0, 0);
+    const revenue = await RevenueRepo.findOneByDateAndUpsert({
+      date: dateTime,
+      is_open,
+    });
+    return new SuccessResponse('success', revenue).send(res);
   }),
 );
 
