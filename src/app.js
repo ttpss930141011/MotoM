@@ -12,6 +12,7 @@ const MongoStore = require('connect-mongo');
 const { ApiError } = require('./core/ApiError');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const favicon = require('express-favicon');
 const mongoose = require('./database')();
 const routesV1 = require('./routes');
@@ -54,6 +55,7 @@ app.use(flash());
 // 初始化 Passport
 app.use(passport.initialize());
 app.use(passport.session());
+// localStrategy
 passport.use(
   'login',
   new LocalStrategy(async (username, password, done) => {
@@ -81,6 +83,7 @@ passport.use(
         const newUser = await UserRepo.create(
           {
             username: username,
+            displayname: username,
             password: hashedPassword,
           },
           'EDITOR',
@@ -92,21 +95,55 @@ passport.use(
     },
   ),
 );
+// googleStrategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const existingUser = await UserRepo.findByUsername(profile.id);
+        if (existingUser) return done(null, existingUser)
+      
+        const hashedPassword = await bcrypt.hash(profile.id, 10);
+        const newUser = await UserRepo.create(
+          {
+            username: profile.id,
+            displayname: profile.displayName,
+            password: hashedPassword,
+          },
+          'EDITOR',
+        );
+        return done(null, newUser);
+      } catch (err) {
+        console.error(err);
+        return done(err);
+      }
+    },
+  ),
+);
 
 // 序列化和反序列化
-passport.serializeUser((user, cb) => {
+passport.serializeUser((user, done) => {
   process.nextTick(function () {
-    // console.log(user)
-    return cb(null, {
+    // console.log('serializeUser', user);
+    return done(null, {
       _id: user._id,
       roles: user.roles,
       username: user.username,
+      displayname: user.displayname,
     });
   });
 });
-passport.deserializeUser((user, cb) => {
-  process.nextTick(function () {
-    return cb(null, user);
+passport.deserializeUser((user, done) => {
+  process.nextTick(async () => {
+    const storedUser = await UserRepo.findByIdNotPopulate(user._id);
+    // console.log(storedUser);
+    if (!storedUser) return done(null, false);
+    return done(null, storedUser);
   });
 });
 /*-------------------------------------------------------------------------*/
@@ -125,7 +162,7 @@ app.use((req, res, next) => next(new NotFoundError()));
 /*---------------------------------------------------------*/
 // Middleware Error Handler
 app.use((err, req, res, next) => {
-  console.log(err)
+  console.log(err);
   Logger.error(`500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
   Logger.error(err);
   if (err instanceof ApiError) return ApiError.handle(err, res);

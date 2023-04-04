@@ -3,6 +3,7 @@
   <head>
     <%- include('./components/header'); %>
     <link rel="stylesheet" href="/vendors/zabuto/css/zabuto_calendar.min.css" />
+    <script src="/vendors/echarts/echarts.min.js"></script>
     <style type="text/css">
       .demo-calendar {
         /* min-height: 340px; */
@@ -12,6 +13,23 @@
         border-radius: 4px;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         font-size: 14px;
+      }
+      .or-seperator {
+        margin-top: 20px;
+        text-align: center;
+        border-top: 1px solid #e0e0e0;
+      }
+      .or-seperator i {
+        padding: 0 4px;
+        width: 30px;
+        height: 30px;
+        text-align: center;
+        line-height: 26px;
+        background: #ffffff;
+        display: inline-block;
+        position: relative;
+        top: -15px;
+        z-index: 1;
       }
     </style>
   </head>
@@ -36,7 +54,9 @@
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">當日總營收</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800"><%=revenue.total_revenue %></div>
+                    <div id="total_revenue" class="h5 mb-0 font-weight-bold text-gray-800">
+                      <%=revenue.total_revenue %>
+                    </div>
                   </div>
                   <div class="col-auto">
                     <i class="bi bi-piggy-bank-fill fa-2x text-gray-200"></i>
@@ -53,7 +73,9 @@
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-success text-uppercase mb-1">當日總顧客數量</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800"><%=revenue.total_motos.length %></div>
+                    <div id="total_motos" class="h5 mb-0 font-weight-bold text-gray-800">
+                      <%=revenue.total_motos.length %>
+                    </div>
                   </div>
                   <div class="col-auto">
                     <i class="bi bi-people-fill fa-2x text-gray-200"></i>
@@ -71,7 +93,9 @@
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">當日新顧客數量</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800"><%=revenue.new_motos.length %></div>
+                    <div id="new_motos" class="h5 mb-0 font-weight-bold text-gray-800">
+                      <%=revenue.new_motos.length %>
+                    </div>
                   </div>
                   <div class="col-auto">
                     <i class="bi bi-person-fill-add fa-2x text-gray-200"></i>
@@ -90,17 +114,35 @@
               <div class="card-body">
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">當日已營業時長</div>
+                    <!-- 如果is_open === false ，則添加休假badge-->
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1 justify-content-between d-flex">
+                      <span>當日已營業時長</span>
+                      <% if(revenue.is_open === false){ %>
+                      <span id="is_open_badge" class="badge bg-danger">休假</span>
+                      <% } %>
+                    </div>
+                    <!-- <span class="badge bg-secondary">New</span> -->
+                    <span class="d-none" id="is_open"><%=revenue.is_open %></span>
                     <div class="row no-gutters align-items-center">
                       <div class="col-auto">
                         <div id="progress-num" class="h5 mb-0 mr-3 font-weight-bold text-gray-800"></div>
                       </div>
                       <div class="col">
                         <!-- 在這個progress bar左上的灰色小標籤，表示起始時間 -->
-                        <div  class="d-flex justify-content-between">
-                          <span id="start_work_time" class="text-xs font-weight-bold text-secondary text-uppercase" style="font-size: xx-small;"><%=revenue.start_work_time %></span>
+                        <div class="d-flex justify-content-between">
+                          <span
+                            id="start_work_time"
+                            class="text-xs font-weight-bold text-secondary text-uppercase"
+                            style="font-size: xx-small"
+                            ><%=revenue.start_work_time %></span
+                          >
                           <!-- 在這個progress bar右上的灰色小標籤，表示結束時間 -->
-                          <span id="end_work_time" class="end-100 text-xs font-weight-bold text-secondary text-uppercase" style="font-size: xx-small;"><%=revenue.end_work_time %></span>
+                          <span
+                            id="end_work_time"
+                            class="end-100 text-xs font-weight-bold text-secondary text-uppercase"
+                            style="font-size: xx-small"
+                            ><%=revenue.end_work_time %></span
+                          >
                         </div>
 
                         <div class="progress progress-sm mr-2">
@@ -123,7 +165,10 @@
                 </div>
               </div>
               <div class="card-footer d-flex align-items-center justify-content-between bg-white">
-                <span id="setting-time" class="small text-info stretched-link text-decoration-underline" href="#"
+                <span
+                  id="setting-time"
+                  class="small text-info stretched-link text-decoration-underline"
+                  style="cursor: pointer"
                   >設定時間</span
                 >
                 <div class="small text-info"><i class="bi bi-chevron-right"></i></div>
@@ -139,12 +184,12 @@
             <div class="card shadow mb-4">
               <!-- Card Header - Dropdown -->
               <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Earnings Overview</h6>
+                <h6 class="m-0 font-weight-bold text-primary">營收總覽</h6>
               </div>
               <!-- Card Body -->
               <div class="card-body">
-                <div class="chart-area">
-                  <canvas id="myAreaChart"></canvas>
+                <div class="chart-area" style="height: 345px; margin: 0;">
+                  <div id="days-earning" style="height: 100%"></div>
                 </div>
               </div>
             </div>
