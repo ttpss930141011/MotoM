@@ -2,7 +2,20 @@ $(document).ready(function () {
   // today 00:00:00
   let selectedDate = new Date();
   selectedDate.setHours(0, 0, 0, 0);
-
+  const MOTOSERVICE_TYPE = {
+    REPAIR: '機車維修', // 維修
+    MAINTAIN: '機車保養', // 保養
+    SALES: '機車銷售', // 銷售
+    RENTAL: '機車租賃', // 租賃
+    PARTS: '零件販售', // 零件
+    ACCESSORIES: '配件販售', // 配件
+    INSURANCE: '保險相關', // 保險
+    CLAIMS: '理賠處理', // 理賠
+    ACCIDENT: '事故處理', // 事故
+    INSPECTION: '機車檢驗', // 檢驗
+    OTHER: '其他業務', // 其他
+  };
+  /*----------------- 日期選擇器 -----------------*/
   const calendar = $('#calendar');
   calendar.zabuto_calendar({
     week_starts: 'sunday',
@@ -78,52 +91,16 @@ $(document).ready(function () {
     });
   });
 
-  calendar.on('zabuto:calendar:goto', function (e) {
-    console.log('zabuto:calendar:goto' + ' year=' + e.year + ' month=' + e.month);
+  calendar.on('zabuto:calendar:goto', async ({ month, year }) => {
+    renderRevenueData(month, year);
   });
-  // updatedWorkTime
-  function updatedWorkTime() {
-    const startTime = $('#start_work_time').text().split(':'); // 將值以':'分割，並存入startTime陣列中
-    const endTime = $('#end_work_time').text().split(':'); // 將值以':'分割，並存入endTime陣列中
-    // 深拷貝selectedDate，避免將selectedDate的值改變
-    const startTimestamps = new Date(selectedDate);
-    startTimestamps.setHours(Number(startTime[0]), Number(startTime[1])); // 設定start時間為早上9點
-    const endTimestamps = new Date(selectedDate);
-    endTimestamps.setHours(Number(endTime[0]), Number(endTime[1])); // 設定end時間為晚上21點
-    const totalTime = endTimestamps.getTime() - startTimestamps.getTime(); // 總時長（毫秒）
-    const elapsedTime = new Date().getTime() - startTimestamps.getTime(); // 已經過的時間（毫秒）
-    const formattedTime = formatTime(elapsedTime);
-    const progress = getProgress(elapsedTime, totalTime); // 計算進度百分比（向下取整）
-    $('#progress-num').text(progress + '%');
-    $('#progress-bar').css('width', progress + '%');
-    $('#progress-text').text(formattedTime);
-  }
+  /*----------------- Data intialization -----------------*/
   // intialization progress
   updatedWorkTime();
   setInterval(() => updatedWorkTime(), 1000);
-
-  // 將毫秒轉換為hh:mm:ss的格式
-  function formatTime(time) {
-    let hour = Math.floor(time / 3600000);
-    let minute = Math.floor((time % 3600000) / 60000);
-    let second = Math.floor(((time % 360000) % 60000) / 1000);
-    hour = hour < 10 ? '0' + hour : hour;
-    minute = minute < 10 ? '0' + minute : minute;
-    second = second < 10 ? '0' + second : second;
-    return hour + ':' + minute + ':' + second;
-  }
-  // 計算進度百分比（向下取整），最大為100，最小為0
-  function getProgress(elapsedTime, totalTime) {
-    const progress = Math.floor((elapsedTime / totalTime) * 100);
-    if (progress > 100) {
-      return 100;
-    } else if (progress < 0) {
-      return 0;
-    } else {
-      return progress;
-    }
-  }
-
+  // initial render revenue data
+  renderRevenueData(selectedDate.getMonth() + 1, selectedDate.getFullYear());
+  /*----------------- Event binding -----------------*/
   // 點擊id = setting-time的按鈕，彈出Swal視窗，內容為上下班時間的input，以及今天沒有上班的按鈕
   // 打put request去 /revenue/worktime 路徑，將上下班時間的input的value與selectedDate傳到後端
   $('#setting-time').click(function () {
@@ -219,7 +196,295 @@ $(document).ready(function () {
       allowOutsideClick: () => !Swal.isLoading(),
     });
   });
-  const updateOpenSwal = () => {
+  /*------------------- 畫圖 -------------------*/
+  // 切換月份會自動更新當月收入圖表
+  async function daysEarningChart(data) {
+    const { days, total_revenue, cumulative_revenue, new_motos, total_motos_cumulative } = data;
+    // '當月累加收入', '當月收入' 為左邊的line，'當月新車數', '當月累加車數' 為右邊的bar
+    const option = {
+      title: {
+        text: '當月收入',
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          crossStyle: {
+            color: '#999',
+          },
+        },
+      },
+
+      legend: {
+        data: ['當月累加收入', '當月收入', '當月新車數', '當月累加車數'],
+        width: '70%',
+        left: 'right',
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: days,
+        axisPointer: {
+          type: 'shadow',
+        },
+      },
+      yAxis: [
+        {
+          type: 'value',
+          name: '收入',
+          axisLabel: {
+            formatter: '{value} 元',
+          },
+        },
+        {
+          type: 'value',
+          name: '車數',
+          axisLabel: {
+            formatter: '{value} 輛',
+          },
+        },
+      ],
+      series: [
+        {
+          name: '當月累加收入',
+          type: 'line',
+          data: cumulative_revenue,
+        },
+        {
+          name: '當月收入',
+          type: 'line',
+          data: total_revenue,
+        },
+        {
+          name: '當月新車數',
+          type: 'bar',
+          yAxisIndex: 1,
+          data: new_motos,
+        },
+        {
+          name: '當月累加車數',
+          type: 'bar',
+          yAxisIndex: 1,
+          data: total_motos_cumulative,
+        },
+      ],
+      dataZoom: [
+        {
+          orient: 'horizontal',
+          show: this.zoomShow,
+          realtime: true,
+          height: 15,
+          start: 0,
+          end: this.endValue,
+          bottom: '4%',
+          zoomLock: true,
+        },
+        {
+          type: 'inside',
+          brushSelect: true,
+          start: 0,
+          end: 100,
+          xAxisIndex: [0],
+        },
+      ],
+    };
+    // 檢查是否已生成過圖表，若有則先清除
+    if (echarts.getInstanceByDom(document.getElementById('revenue-chart'))) {
+      echarts.getInstanceByDom(document.getElementById('revenue-chart')).dispose();
+    }
+    const revenueChart = echarts.init(document.getElementById('revenue-chart'));
+    revenueChart.setOption(option);
+    window.addEventListener('resize', revenueChart.resize);
+  }
+
+  // 切換月份會自動更新當月收入類型圖表
+  async function daysEarningTypeChart(data) {
+    const { days, type_revenue, total_type_revenue } = data;
+    const option = {
+      title: {
+        text: '當月收入類型',
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          crossStyle: {
+            color: '#999',
+          },
+        },
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true,
+      },
+      legend: {
+        data: Object.values(MOTOSERVICE_TYPE),
+        width: '70%',
+        // 靠右邊
+        left: 'right',
+      },
+      xAxis: [
+        {
+          type: 'category',
+          data: days,
+          axisPointer: {
+            type: 'shadow',
+          },
+        },
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          name: '收入',
+          min: 0,
+          axisLabel: {
+            formatter: '{value} 元',
+          },
+        },
+      ],
+      series: Object.keys(MOTOSERVICE_TYPE).map((type) => ({
+        name: MOTOSERVICE_TYPE[type],
+        type: 'bar',
+        data: total_type_revenue[type],
+      })),
+      dataZoom: [
+        {
+          orient: 'horizontal',
+          show: this.zoomShow,
+          realtime: true,
+          height: 15,
+          start: 0,
+          end: this.endValue,
+          bottom: '4%',
+          zoomLock: true,
+        },
+        {
+          type: 'inside',
+          brushSelect: true,
+          start: 0,
+          end: 100,
+          xAxisIndex: [0],
+        },
+      ],
+    };
+    // 檢查是否已生成過圖表，若有則先清除
+    if (echarts.getInstanceByDom(document.getElementById('revenue-type-chart'))) {
+      echarts.getInstanceByDom(document.getElementById('revenue-type-chart')).dispose();
+    }
+    const revenueTypeChart = echarts.init(document.getElementById('revenue-type-chart'));
+    revenueTypeChart.setOption(option);
+    window.addEventListener('resize', revenueTypeChart.resize);
+  }
+  // 切換月份會自動更新當月收入類型圓餅圖
+  async function daysEarningTypePieChart(data) {
+    const { total_type_revenue } = data;
+    option = {
+      tooltip: {
+        trigger: 'item',
+      },
+      legend: {
+        left: 'center',
+      },
+
+      series: [
+        {
+          name: '當月收入類型',
+          type: 'pie',
+          radius: ['10%', '80%'],
+          top: '20%',
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2,
+          },
+          label: {
+            show: false,
+            position: 'center',
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 20,
+              fontWeight: 'bold',
+            },
+          },
+          labelLine: {
+            show: false,
+          },
+          data: Object.keys(MOTOSERVICE_TYPE).map((type) => ({
+            value: total_type_revenue[type].reduce((a, b) => a + b, 0),
+            name: MOTOSERVICE_TYPE[type],
+          })),
+        },
+      ],
+    };
+    // 檢查是否已生成過圖表，若有則先清除
+    if (echarts.getInstanceByDom(document.getElementById('revenue-type-pie-chart'))) {
+      echarts.getInstanceByDom(document.getElementById('revenue-type-pie-chart')).dispose();
+    }
+    const revenueTypePieChart = echarts.init(document.getElementById('revenue-type-pie-chart'));
+    revenueTypePieChart.setOption(option);
+    window.addEventListener('resize', revenueTypePieChart.resize);
+  }
+
+  /*------------------- utils -------------------*/
+  // render revenue data
+  async function renderRevenueData(month, year) {
+    const { data } = await getRevenueData({ month, year });
+    if (data.length === 0) return;
+    const chartData = revenueDateToEchartData(data);
+    daysEarningChart(chartData);
+    daysEarningTypeChart(chartData);
+    daysEarningTypePieChart(chartData);
+  }
+  // updatedWorkTime
+  function updatedWorkTime() {
+    const startTime = $('#start_work_time').text().split(':'); // 將值以':'分割，並存入startTime陣列中
+    const endTime = $('#end_work_time').text().split(':'); // 將值以':'分割，並存入endTime陣列中
+    // 深拷貝selectedDate，避免將selectedDate的值改變
+    const startTimestamps = new Date(selectedDate);
+    startTimestamps.setHours(Number(startTime[0]), Number(startTime[1])); // 設定start時間為早上9點
+    const endTimestamps = new Date(selectedDate);
+    endTimestamps.setHours(Number(endTime[0]), Number(endTime[1])); // 設定end時間為晚上21點
+    const totalTime = endTimestamps.getTime() - startTimestamps.getTime(); // 總時長（毫秒）
+    const elapsedTime = new Date().getTime() - startTimestamps.getTime(); // 已經過的時間（毫秒）
+    const formattedTime = formatTime(elapsedTime);
+    const progress = getProgress(elapsedTime, totalTime); // 計算進度百分比（向下取整）
+    $('#progress-num').text(progress + '%');
+    $('#progress-bar').css('width', progress + '%');
+    $('#progress-text').text(formattedTime);
+  }
+  // 將毫秒轉換為hh:mm:ss的格式
+  function formatTime(time) {
+    let hour = Math.floor(time / 3600000);
+    let minute = Math.floor((time % 3600000) / 60000);
+    let second = Math.floor(((time % 360000) % 60000) / 1000);
+    hour = hour < 10 ? '0' + hour : hour;
+    minute = minute < 10 ? '0' + minute : minute;
+    second = second < 10 ? '0' + second : second;
+    return hour + ':' + minute + ':' + second;
+  }
+  // 計算進度百分比（向下取整），最大為100，最小為0
+  function getProgress(elapsedTime, totalTime) {
+    const progress = Math.floor((elapsedTime / totalTime) * 100);
+    if (progress > 100) {
+      return 100;
+    } else if (progress < 0) {
+      return 0;
+    } else {
+      return progress;
+    }
+  }
+
+  function updateOpenSwal() {
     // 點集id = no-work的按鈕，彈出Swal視窗，確認使用者是否要將今天設定為沒有上班，是的話打PATCH request去 /revenue/is_open 路徑，將is_open = false的value與selectedDate傳到後端
     const is_open = $('#is_open').text() === 'true';
     const updatedIsOpen = !is_open;
@@ -267,12 +532,11 @@ $(document).ready(function () {
       },
       allowOutsideClick: () => !Swal.isLoading(),
     });
-  };
+  }
 
   // ajax取得當月的收入資料
-  const getRevenueData = async (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
+  async function getRevenueData({ month, year }) {
+    if (!month || !year) return;
     const response = await $.ajax({
       url: '/revenue/month',
       type: 'GET',
@@ -292,39 +556,9 @@ $(document).ready(function () {
       },
     });
     return response;
-  };
-  /*
-    這是revenue的一天的資料格式，一個月有31天，所以一個月的資料就是31個這樣的物件
-    
-    { 
-    "date" : ISODate("2023-04-03T16:00:00.000+0000"), 
-    "createdAt" : ISODate("2023-04-04T02:44:49.175+0000"), 
-    "new_motos" : [
+  }
 
-    ], 
-    "status" : true, 
-    "total_motos" : [
-
-    ], 
-    "total_revenue" : NumberInt(0), 
-    "type_revenue" : {
-        "ACCESSORIES" : NumberInt(0), 
-        "ACCIDENT" : NumberInt(0), 
-        "CLAIMS" : NumberInt(0), 
-        "INSPECTION" : NumberInt(0), 
-        "INSURANCE" : NumberInt(0), 
-        "MAINTAIN" : NumberInt(0), 
-        "OTHER" : NumberInt(0), 
-        "PARTS" : NumberInt(0), 
-        "RENTAL" : NumberInt(0), 
-        "REPAIR" : NumberInt(0), 
-        "SALES" : NumberInt(0)
-    }, 
-    "updatedAt" : ISODate("2023-04-04T05:22:22.522+0000")
-  } */
-  // 將這一個月的資料生成echart的資料格式
-  getRevenueData(selectedDate).then(({ data }) => {
-    console.log(data);
+  function revenueDateToEchartData(data = []) {
     // days 取得格式為 mm/dd 的日期
     const days = data.map((day) => {
       const date = new Date(day.date);
@@ -337,280 +571,28 @@ $(document).ready(function () {
       return acc;
     }, []);
     const type_revenue = data.map((day) => day.type_revenue);
+
+    const total_type_revenue = Object.keys(MOTOSERVICE_TYPE).reduce((acc, cur) => {
+      acc[cur] = type_revenue.map((day) => day[cur]);
+      return acc;
+    }, {});
     const new_motos = data.map((day) => day.new_motos.length);
     const total_motos = data.map((day) => day.total_motos.length);
-    console.log(new_motos);
-    console.log(total_motos);
-    const is_open = $('#is_open').text() === 'true';
-    const daysEarning = echarts.init(document.getElementById('days-earning'), null, {
-      renderer: 'canvas',
-      useDirtyRect: false,
-    });
-    // 當月累加收入為line，當天收入為line，新車為bar，總車輛為bar
-    const daysEarningOption = {
-      title: {
-        text: '每日收入',
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'cross',
-          crossStyle: {
-            color: '#999',
-          },
-        },
-      },
-      grid: {
-        left: '15%', // left padding
-      },
-      toolbox: {
-        feature: {
-          dataView: { show: true, readOnly: false },
-          magicType: { show: true, type: ['line', 'bar'] },
-          restore: { show: true },
-          saveAsImage: { show: true },
-        },
-      },
-      legend: {
-        data: ['當月累加收入', '當天收入', '新車', '總車輛'],
-      },
-      xAxis: [
-        {
-          type: 'category',
-          data: days,
-          axisPointer: {
-            type: 'shadow',
-          },
-        },
-      ],
-      yAxis: [
-        {
-          type: 'value',
-          name: '收入',
-          min: 0,
-          axisLabel: {
-            formatter: '{value} 元',
-          },
-        },
-        {
-          type: 'value',
-          name: '車輛',
-          min: 0,
-          interval: 5,
-          axisLabel: {
-            formatter: '{value} 輛',
-          },
-        },
-      ],
-      series: [
-        {
-          name: '當月累加收入',
-          type: 'line',
-          data: cumulative_revenue,
-        },
-        {
-          name: '當天收入',
-          type: 'line',
-          data: total_revenue,
-        },
-        {
-          name: '新車',
-          type: 'bar',
-          data: new_motos,
-          yAxisIndex: 1,
-        },
-        {
-          name: '總車輛',
-          type: 'bar',
-          data: total_motos,
-          yAxisIndex: 1,
-        },
-      ],
-    };
-    daysEarning.setOption(daysEarningOption);
-    // const daysEarningType = echarts.init(document.getElementById('days-earning-type'), null, {
-    //   renderer: 'canvas',
-    //   useDirtyRect: false,
-    // });
-    // const daysEarningTypeOption = {
-    //   title: {
-    //     text: '每日收入類型',
-    //   },
-    //   tooltip: {
-    //     trigger: 'axis',
-    //     axisPointer: {
-    //       type: 'cross',
-    //       crossStyle: {
-    //         color: '#999',
-    //       },
-    //     },
-    //   },
-    //   toolbox: {
-    //     feature: {
-    //       dataView: { show: true, readOnly: false },
-    //       magicType: { show: true, type: ['line', 'bar'] },
-    //       restore: { show: true },
-    //       saveAsImage: { show: true },
-    //     },
-    //   },
-    //   legend: {
-    //     data: ['保險', '維修', '檢驗', '銷售', '其他'],
-    //   },
-    //   xAxis: [
-    //     {
-    //       type: 'category',
-    //       data: days,
-    //       axisPointer: {
-    //         type: 'shadow',
-    //       },
-    //     },
-    //   ],
-    //   yAxis: [
-    //     {
-    //       type: 'value',
-    //       name: '收入',
-    //       min: 0,
-    //       max: 100000,
-    //       interval: 10000,
-    //       axisLabel: {
-    //         formatter: '{value} 元',
-    //       },
-    //     },
-    //   ],
-    //   series: [
-    //     {
-    //       name: '保險',
-    //       type: 'bar',
-    //       data: type_revenue.map((day) => day.INSURANCE),
-    //     },
-    //     {
-    //       name: '維修',
-    //       type: 'bar',
-    //       data: type_revenue.map((day) => day.REPAIR),
-    //     },
-    //     {
-    //       name: '檢驗',
-    //       type: 'bar',
-    //       data: type_revenue.map((day) => day.INSPECTION),
-    //     },
-    //     {
-    //       name: '銷售',
-    //       type: 'bar',
-    //       data: type_revenue.map((day) => day.SALE),
-    //     },
-    //     {
-    //       name: '其他',
-    //       type: 'bar',
-    //       data: type_revenue.map((day) => day.OTHER),
-    //     },
-    //   ],
-    // };
-    // daysEarningType.setOption(daysEarningTypeOption);
-    // const daysEarningTypePie = echarts.init(document.getElementById('days-earning-type-pie'), null, {
-    //   renderer: 'canvas',
-    //   useDirtyRect: false,
-    // });
-    // const daysEarningTypePieOption = {
-    //   title: {
-    //     text: '每日收入類型',
-    //   },
-    //   tooltip: {
-    //     trigger: 'item',
-    //     formatter: '{a} <br/>{b}: {c} ({d}%)',
-    //   },
-    //   legend: {
-    //     orient: 'vertical',
-    //     x: 'left',
-    //     data: ['保險', '維修', '檢驗', '銷售', '其他'],
-    //   },
-    //   series: [
-    //     {
-    //       name: '收入類型',
-    //       type: 'pie',
-    //       radius: ['50%', '70%'],
-    //       avoidLabelOverlap: false,
-    //       label: {
-    //         normal: {
-    //           show: false,
-    //           position: 'center',
-    //         },
-    //         emphasis: {
-    //           show: true,
-    //           textStyle: {
-    //             fontSize: '30',
-    //             fontWeight: 'bold',
-    //           },
-    //         },
-    //       },
-    //       labelLine: {
-    //         normal: {
-    //           show: false,
-    //         },
-    //       },
-    //       data: [
-    //         { value: type_revenue[0].INSURANCE, name: '保險' },
-    //         { value: type_revenue[0].REPAIR, name: '維修' },
-    //         { value: type_revenue[0].INSPECTION, name: '檢驗' },
-    //         { value: type_revenue[0].SALE, name: '銷售' },
-    //         { value: type_revenue[0].OTHER, name: '其他' },
-    //       ],
-    //     },
-    //   ],
-    // };
-    // daysEarningTypePie.setOption(daysEarningTypePieOption);
-    // const daysEarningTypePie2 = echarts.init(document.getElementById('days-earning-type-pie2'), null, {
-    //   renderer: 'canvas',
-    //   useDirtyRect: false,
-    // });
-    // const daysEarningTypePie2Option = {
-    //   title: {
-    //     text: '每日收入類型',
-    //   },
-    //   tooltip: {
-    //     trigger: 'item',
-    //     formatter: '{a} <br/>{b}: {c} ({d}%)',
-    //   },
-    //   legend: {
-    //     orient: 'vertical',
-    //     x: 'left',
-    //     data: ['保險', '維修', '檢驗', '銷售', '其他'],
-    //   },
-    //   series: [
-    //     {
-    //       name: '收入類型',
-    //       type: 'pie',
-    //       radius: ['50%', '70%'],
-    //       avoidLabelOverlap: false,
-    //       label: {
-    //         normal: {
-    //           show: false,
-    //           position: 'center',
-    //         },
-    //         emphasis: {
-    //           show: true,
-    //           textStyle: {
-    //             fontSize: '30',
-    //             fontWeight: 'bold',
-    //           },
-    //         },
-    //       },
-    //       labelLine: {
-    //         normal: {
-    //           show: false,
-    //         },
-    //       },
-    //       data: [
-    //         { value: type_revenue[1].INSURANCE, name: '保險' },
-    //         { value: type_revenue[1].REPAIR, name: '維修' },
-    //         { value: type_revenue[1].INSPECTION, name: '檢驗' },
-    //         { value: type_revenue[1].SALE, name: '銷售' },
-    //         { value: type_revenue[1].OTHER, name: '其他' },
-    //       ],
-    //     },
-    //   ],
-    // };
-    // daysEarningTypePie2.setOption(daysEarningTypePie2Option);
 
-    window.addEventListener('resize', daysEarning.resize);
-  });
+    const total_motos_cumulative = total_motos.reduce((acc, cur) => {
+      acc.push(cur + (acc[acc.length - 1] || 0));
+      return acc;
+    }, []);
+    return {
+      days,
+      total_revenue,
+      cumulative_revenue,
+      type_revenue,
+      new_motos,
+      total_motos,
+      total_type_revenue,
+      total_motos_cumulative,
+    };
+  }
+  /*----------------------------------------------*/
 });
