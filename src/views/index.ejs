@@ -2,8 +2,10 @@
 <html lang="en">
   <head>
     <%- include('./components/header'); %>
+    <link rel="stylesheet" href="/vendors/datatables/css/jquery.dataTables.min.css" />
+    <script src="/vendors/datatables/js/jquery.dataTables.min.js"></script>
     <link rel="stylesheet" href="/vendors/zabuto/css/zabuto_calendar.min.css" />
-    <script src="/vendors/echarts/echarts.min.js"></script>
+    <script src="/vendors/echarts/echarts.common.min.js"></script>
     <style type="text/css">
       .demo-calendar {
         /* min-height: 340px; */
@@ -119,6 +121,8 @@
                       <span>當日已營業時長</span>
                       <% if(revenue.is_open === false){ %>
                       <span id="is_open_badge" class="badge bg-danger">休假</span>
+                      <% } else { %>
+                      <span id="is_open_badge" class="badge bg-success">營業</span>
                       <% } %>
                     </div>
                     <!-- <span class="badge bg-secondary">New</span> -->
@@ -177,19 +181,61 @@
           </div>
         </div>
         <!-- Content Row -->
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="card shadow mb-4">
+              <!-- Card Header - Dropdown -->
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">當日營收類型總覽</h6>
+              </div>
+              <!-- Card Body -->
+              <div class="card-body">
+                <div class="chart-area" style="height: 330px; margin: 0">
+                  <div id="daily-revenue-type-chart" style="height: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
+          <!-- Pie Chart -->
+          <div class="col-lg-6">
+            <div class="card shadow mb-4">
+              <!-- Card Header - Dropdown -->
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">今日已提供服務</h6>
+              </div>
+              <!-- Card Body -->
+              <div class="card-body">
+                <div class="table-area" style="height: 330px; margin: 0">
+                  <table id="service-table" class="display hover stripe row-border" style="width: 100%">
+                    <thead>
+                      <tr>
+                        <th>序號</th>
+                        <th>車牌</th>
+                        <th>稱呼</th>
+                        <th>類型</th>
+                        <th>金額</th>
+                        <th>時間</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="row">
           <!-- Area Chart -->
           <div class="col-xl-8 col-lg-7">
             <div class="card shadow mb-4">
               <!-- Card Header - Dropdown -->
               <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">營收總覽</h6>
+                <h6 class="m-0 font-weight-bold text-primary">月營收總覽</h6>
               </div>
               <!-- Card Body -->
               <div class="card-body">
-                <div class="chart-area" style="height: 345px; margin: 0;">
-                  <div id="days-earning" style="height: 100%"></div>
+                <div class="chart-area m-0" style="height: 343px">
+                  <div id="revenue-chart" style="height: 100%"></div>
                 </div>
               </div>
             </div>
@@ -209,7 +255,39 @@
             </div>
           </div>
         </div>
+        <div class="row">
+          <!-- Area Chart -->
+          <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+              <!-- Card Header - Dropdown -->
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">月營收類型總覽</h6>
+              </div>
+              <!-- Card Body -->
+              <div class="card-body">
+                <div class="chart-area" style="height: 330px; margin: 0">
+                  <div id="revenue-type-chart" style="height: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
+          <!-- Pie Chart -->
+          <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+              <!-- Card Header - Dropdown -->
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">月營收類別圓餅圖</h6>
+              </div>
+              <!-- Card Body -->
+              <div class="card-body">
+                <div class="chart-area" style="height: 330px; margin: 0">
+                  <div id="revenue-type-pie-chart" style="height: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- Content Row -->
       </main>
     </div>

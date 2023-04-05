@@ -37,6 +37,7 @@ $(document).ready(function () {
   const timeLines = records.map(({ price, message, createdAt, action, served_by }, index) => {
     const priceContent = price !== 0 ? [{ tag: 'p', content: `消費金額: ${price}` }] : [];
     const messageContents = message?.split('\n')?.map((line) => ({ tag: 'p', content: line })) ?? [];
+    console.log(records)
     const time = dayjs(createdAt).format('YYYY/MM/DD hh:mm:ss');
     return {
       time,
@@ -62,7 +63,7 @@ $(document).ready(function () {
             </button>
           </div>
         </div>`,
-      body: [...messageContents, ...priceContent, { tag: 'p', content: `服務人員: ${served_by.username}` }],
+      body: [...messageContents, ...priceContent, { tag: 'p', content: `服務人員: ${served_by?.displayname}` }],
       footer: `時間：${time}`,
     };
   });

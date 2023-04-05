@@ -12,7 +12,12 @@ module.exports = {
       month: Joi.number().required(),
     })
     .unknown(true),
-
+  is_open: Joi.object()
+    .keys({
+      year: Joi.number().required(),
+      month: Joi.number().required(),
+    })
+    .unknown(true),
   worktime: Joi.object()
     .keys({
       date: Joi.date().required(),

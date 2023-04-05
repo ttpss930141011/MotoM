@@ -4,6 +4,12 @@ module.exports = {
   id: Joi.object().keys({
     id: JoiObjectId().required(),
   }),
+  date: Joi.object()
+    .keys({
+      date: Joi.date().required(),
+    })
+    .unknown(true),
+
   find: Joi.object()
     .keys({
       license_no: Joi.string().required(),

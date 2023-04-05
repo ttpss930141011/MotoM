@@ -36,7 +36,7 @@ module.exports = class MotoRepo {
       .populate({
         path: 'records',
         match: { status: true },
-        populate: { path: 'served_by', select: 'username' },
+        populate: { path: 'served_by', select: 'displayname' },
       })
       .lean()
       .exec();

@@ -15,6 +15,14 @@ module.exports = class RevenueRepo {
       .exec();
   }
 
+  static async getIsOpenByMonth(month, year) {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 1);
+    return RevenueModel.find({ date: { $gte: start, $lt: end } }, { is_open: 1, date: 1, _id: 0 })
+      .lean()
+      .exec();
+  }
+
   static async create(revenue, session = null) {
     return RevenueModel.create(revenue, { session });
   }

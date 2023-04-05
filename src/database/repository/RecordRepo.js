@@ -1,6 +1,15 @@
 const RecordModel = require('../model/Record');
-
 module.exports = class RecordRepo {
+  static findByDate(startDate, endDate) {
+    return RecordModel.find({ createdAt: { $gte: startDate, $lte: endDate } })
+      .populate({
+        path: 'moto_id',
+        select: ['license_no', 'owner_name'],
+      })
+      .lean()
+      .exec();
+  }
+
   static async create(record, session = null) {
     return RecordModel.create([record], { session });
   }
