@@ -1,7 +1,9 @@
-$(document).ready(function () {
+$(document).ready(async function () {
+  /*----------------- Data intialization -----------------*/
   // today 00:00:00
   let selectedDate = new Date();
   selectedDate.setHours(0, 0, 0, 0);
+
   const MOTOSERVICE_TYPE = {
     REPAIR: '機車維修', // 維修
     MAINTAIN: '機車保養', // 保養
@@ -15,6 +17,41 @@ $(document).ready(function () {
     INSPECTION: '機車檢驗', // 檢驗
     OTHER: '其他業務', // 其他
   };
+  // intialization progress
+  updatedWorkTime();
+  setInterval(() => updatedWorkTime(), 1000);
+  // initial render revenue data
+  const { data: revenueData = [] } = await getMonthlyRevenueData({
+    month: selectedDate.getMonth() + 1,
+    year: selectedDate.getFullYear(),
+  });
+  let { data: dailyRecoeds = [] } = await getDailyRecoedsData({ date: selectedDate });
+  const { data: dailyRevenue } = await getDailyRevenueData({ date: selectedDate });
+  const isOpenData = revenueData?.map((item) => {
+    // dateString format = 'YYYY-MM-DD'
+    const date = new Date(item.date);
+    const year = date.getFullYear();
+    const month = `0${date.getMonth() + 1}`.slice(-2);
+    const day = `0${date.getDate()}`.slice(-2);
+    const dateString = `${year}-${month}-${day}`;
+    if (item.is_open) {
+      return {
+        date: dateString,
+        classname: 'text-success',
+        markup: `<div class="badge rounded-pill bg-success">[day]</div>`,
+      };
+    } else {
+      return {
+        date: dateString,
+        classname: 'text-danger',
+        markup: `<div class="badge rounded-pill bg-danger">[day]</div>`,
+      };
+    }
+  });
+  renderRevenueData(revenueData);
+  renderDailyRevenueData(dailyRevenue);
+
+  /*----------------- Event binding -----------------*/
   /*----------------- 日期選擇器 -----------------*/
   const calendar = $('#calendar');
   calendar.zabuto_calendar({
@@ -51,9 +88,10 @@ $(document).ready(function () {
       prev: '<i class="bi bi-chevron-left"></i>',
       next: '<i class="bi bi-chevron-right"></i>',
     },
+    events: isOpenData,
   });
 
-  calendar.on('zabuto:calendar:day', function (e) {
+  calendar.on('zabuto:calendar:day', async function (e) {
     const day = new Date(e.date);
     day.setHours(0, 0, 0, 0);
     const today = new Date();
@@ -64,43 +102,45 @@ $(document).ready(function () {
     $('#calendar td.zabuto-calendar__day').removeClass('bg-secondary text-white');
     $(e.element).addClass('bg-secondary text-white');
     // get revenue date
-    $.ajax({
-      url: `/revenue?date=${day}`,
-      type: 'GET',
-      success: function ({ data }) {
-        $('#total_revenue').text(data.total_revenue);
-        $('#total_motos').text(data.total_motos.length);
-        $('#new_motos').text(data.new_motos.length);
-        $('#start_work_time').text(data.start_work_time);
-        $('#end_work_time').text(data.end_work_time);
-        $('#is_open').text(data.is_open);
-        // 如果 is_open 為 false，則將badge 文字改為休假，且顏色為紅色，否則文字改為營業中，顏色為綠色
-        if (data.is_open) {
-          $('#is_open_badge').removeClass('bg-danger').addClass('bg-success').text('營業');
-        } else {
-          $('#is_open_badge').removeClass('bg-success').addClass('bg-danger').text('休假');
-        }
-      },
-      error: function (err) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.responseJSON.message,
-        });
-      },
-    });
+    const { data } = await getDailyRevenueData({ date: day });
+    $('#total_revenue').text(data.total_revenue);
+    $('#total_motos').text(data.total_motos.length);
+    $('#new_motos').text(data.new_motos.length);
+    $('#start_work_time').text(data.start_work_time);
+    $('#end_work_time').text(data.end_work_time);
+    $('#is_open').text(data.is_open);
+    // 如果 is_open 為 false，則將badge 文字改為休假，且顏色為紅色，否則文字改為營業中，顏色為綠色
+    if (data.is_open) {
+      $('#is_open_badge').removeClass('bg-danger').addClass('bg-success').text('營業');
+    } else {
+      $('#is_open_badge').removeClass('bg-success').addClass('bg-danger').text('休假');
+    }
+    // 重新渲染 daily revenue chart
+    dailyRevenueTypeChart(data);
+    // 重新渲染 daily records table
+    const { data:updatedDailyRecoeds = [] } = await getDailyRecoedsData({ date: selectedDate });
+    $('#service-table').DataTable().clear().rows.add(updatedDailyRecoeds).draw();
   });
 
   calendar.on('zabuto:calendar:goto', async ({ month, year }) => {
-    renderRevenueData(month, year);
+    const { data: revenueData = [] } = await getMonthlyRevenueData({ month, year });
+    renderRevenueData(revenueData);
   });
-  /*----------------- Data intialization -----------------*/
-  // intialization progress
-  updatedWorkTime();
-  setInterval(() => updatedWorkTime(), 1000);
-  // initial render revenue data
-  renderRevenueData(selectedDate.getMonth() + 1, selectedDate.getFullYear());
-  /*----------------- Event binding -----------------*/
+  $.noConflict();
+  $('#service-table').DataTable({
+    scrollY: '200px',
+    scrollCollapse: true,
+    paging: false,
+    data: dailyRecoeds,
+    columns: [
+      { data: 'id' },
+      { data: 'license_no' },
+      { data: 'owner_name' },
+      { data: 'action' },
+      { data: 'price' },
+      { data: 'createdAt' },
+    ],
+  });
   // 點擊id = setting-time的按鈕，彈出Swal視窗，內容為上下班時間的input，以及今天沒有上班的按鈕
   // 打put request去 /revenue/worktime 路徑，將上下班時間的input的value與selectedDate傳到後端
   $('#setting-time').click(function () {
@@ -197,6 +237,84 @@ $(document).ready(function () {
     });
   });
   /*------------------- 畫圖 -------------------*/
+
+  // 當日收入類型折線柱狀圖
+  // 累積營收為line，各項類別為bar
+  async function dailyRevenueTypeChart(data) {
+    const { type_revenue = {} } = data;
+    console.log(type_revenue);
+    console.log(Object.keys(type_revenue).map((item) => MOTOSERVICE_TYPE[item]));
+    const inCome = Object.values(type_revenue);
+    const accumulatedIncome = inCome.reduce((acc, cur) => {
+      acc.push(cur + (acc[acc.length - 1] || 0));
+      return acc;
+    }, []);
+    const option = {
+      title: {
+        text: '當日收入類型',
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          crossStyle: {
+            color: '#999',
+          },
+        },
+      },
+      legend: {
+        data: ['收入', '累積收入'],
+      },
+      xAxis: [
+        {
+          type: 'category',
+          data: Object.keys(type_revenue).map((item) => MOTOSERVICE_TYPE[item]),
+          axisPointer: {
+            type: 'shadow',
+          },
+          axisLabel: {
+            interval: 0,
+            formatter: function (value, index) {
+              if (index % 2 != 0) {
+                return '\n\n' + value;
+              } else {
+                return value;
+              }
+            },
+          },
+        },
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          name: '收入',
+          axisLabel: {
+            formatter: '{value} 元',
+          },
+        },
+      ],
+      series: [
+        {
+          name: '收入',
+          type: 'bar',
+          data: inCome,
+        },
+        {
+          name: '累積收入',
+          type: 'line',
+          data: accumulatedIncome,
+        },
+      ],
+    };
+    // 檢查是否已生成過圖表，若有則先清除
+    if (echarts.getInstanceByDom(document.getElementById('daily-revenue-type-chart'))) {
+      echarts.getInstanceByDom(document.getElementById('daily-revenue-type-chart')).dispose();
+    }
+    const dailyRevenueTypeChart = echarts.init(document.getElementById('daily-revenue-type-chart'));
+    dailyRevenueTypeChart.setOption(option);
+    window.addEventListener('resize', dailyRevenueTypeChart.resize);
+  }
+
   // 切換月份會自動更新當月收入圖表
   async function daysEarningChart(data) {
     const { days, total_revenue, cumulative_revenue, new_motos, total_motos_cumulative } = data;
@@ -437,13 +555,34 @@ $(document).ready(function () {
 
   /*------------------- utils -------------------*/
   // render revenue data
-  async function renderRevenueData(month, year) {
-    const { data } = await getRevenueData({ month, year });
-    if (data.length === 0) return;
-    const chartData = revenueDateToEchartData(data);
+  function renderRevenueData(revenueData) {
+    if (revenueData.length === 0) {
+      // 三張圖表表示無資料
+      $('#revenue-chart')
+        .html('<div id="nodata" style="text-align: center;height:300px;line-height: 300px">無資料...</div>')
+        .removeAttr('_echarts_instance_');
+      $('#revenue-type-chart')
+        .html('<div id="nodata" style="text-align: center;height:300px;line-height: 300px">無資料...</div>')
+        .removeAttr('_echarts_instance_');
+      $('#revenue-type-pie-chart')
+        .html('<div id="nodata" style="text-align: center;height:300px;line-height: 300px">無資料...</div>')
+        .removeAttr('_echarts_instance_');
+      return;
+    }
+    // 有資料
+    const chartData = revenueDateToEchartData(revenueData);
     daysEarningChart(chartData);
     daysEarningTypeChart(chartData);
     daysEarningTypePieChart(chartData);
+  }
+  function renderDailyRevenueData(dailyRevenueData) {
+    if (Object.keys(dailyRevenueData).length === 0) {
+      $('#daily-revenue-type-chart')
+        .html('<div id="nodata" style="text-align: center;height:300px;line-height: 300px">無資料...</div>')
+        .removeAttr('_echarts_instance_');
+      return;
+    }
+    dailyRevenueTypeChart(dailyRevenueData);
   }
   // updatedWorkTime
   function updatedWorkTime() {
@@ -533,9 +672,46 @@ $(document).ready(function () {
       allowOutsideClick: () => !Swal.isLoading(),
     });
   }
-
+  // ajas 取得當日的收入資料
+  async function getDailyRevenueData({ date }) {
+    if (!date) return;
+    const response = await $.ajax({
+      url: `/revenue?date=${date}`,
+      type: 'GET',
+      success: function (data) {
+        return data;
+      },
+      error: async (xhr, status, error) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: `取得收入資料失敗：${xhr.responseJSON.message}`,
+        });
+      },
+    });
+    return response;
+  }
+  // ajax 取得當天服務資料
+  async function getDailyRecoedsData({ date }) {
+    if (!date) return;
+    const response = await $.ajax({
+      url: `/record?date=${date}`,
+      type: 'GET',
+      success: function (data) {
+        return data;
+      },
+      error: async (xhr, status, error) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: `取得服務資料失敗：${xhr.responseJSON.message}`,
+        });
+      },
+    });
+    return response;
+  }
   // ajax取得當月的收入資料
-  async function getRevenueData({ month, year }) {
+  async function getMonthlyRevenueData({ month, year }) {
     if (!month || !year) return;
     const response = await $.ajax({
       url: '/revenue/month',

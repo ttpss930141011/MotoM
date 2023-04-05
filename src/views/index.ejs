@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <%- include('./components/header'); %>
+    <link rel="stylesheet" href="/vendors/datatables/css/jquery.dataTables.min.css" />
+    <script src="/vendors/datatables/js/jquery.dataTables.min.js"></script>
     <link rel="stylesheet" href="/vendors/zabuto/css/zabuto_calendar.min.css" />
     <script src="/vendors/echarts/echarts.common.min.js"></script>
     <style type="text/css">
@@ -179,7 +181,49 @@
           </div>
         </div>
         <!-- Content Row -->
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="card shadow mb-4">
+              <!-- Card Header - Dropdown -->
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">當日營收類型總覽</h6>
+              </div>
+              <!-- Card Body -->
+              <div class="card-body">
+                <div class="chart-area" style="height: 330px; margin: 0">
+                  <div id="daily-revenue-type-chart" style="height: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
+          <!-- Pie Chart -->
+          <div class="col-lg-6">
+            <div class="card shadow mb-4">
+              <!-- Card Header - Dropdown -->
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">今日已提供服務</h6>
+              </div>
+              <!-- Card Body -->
+              <div class="card-body">
+                <div class="table-area" style="height: 330px; margin: 0">
+                  <table id="service-table" class="display hover stripe row-border" style="width: 100%">
+                    <thead>
+                      <tr>
+                        <th>序號</th>
+                        <th>車牌</th>
+                        <th>稱呼</th>
+                        <th>類型</th>
+                        <th>金額</th>
+                        <th>時間</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="row">
           <!-- Area Chart -->
           <div class="col-xl-8 col-lg-7">
@@ -190,7 +234,7 @@
               </div>
               <!-- Card Body -->
               <div class="card-body">
-                <div class="chart-area" style="height: 330px; margin: 0">
+                <div class="chart-area m-0" style="height: 343px">
                   <div id="revenue-chart" style="height: 100%"></div>
                 </div>
               </div>

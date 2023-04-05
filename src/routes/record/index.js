@@ -13,6 +13,36 @@ const role = require('../../helpers/role');
 const authorization = require('../../auth/authorization');
 const { startSession, Types } = require('mongoose');
 const Logger = require('../../core/Logger');
+const { SERVICE_TYPE } = require('../../config');
+const dayjs = require('dayjs');
+
+// 取得當天所有records
+router.get(
+  '/',
+  validator(schema.date, ValidationSource.QUERY),
+  asyncHandler(async (req, res) => {
+    const { date } = req.query;
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    const records = await RecordRepo.findByDate(start, end);
+    const recordsData = records
+      .filter((record) => ![SERVICE_TYPE.CREATED, SERVICE_TYPE.UPDATED].includes(record.action))
+      .map((record, index) => {
+        const { moto_id, owner_name, action, price, createdAt } = record;
+        return {
+          id: index + 1,
+          license_no: moto_id.license_no,
+          owner_name: moto_id.owner_name,
+          action,
+          price,
+          createdAt: dayjs(createdAt).locale('zh-tw').format('YYYY/MM/DD HH:mm:ss'),
+        };
+      });
+    return new SuccessResponse('success', recordsData).send(res);
+  }),
+);
 
 router.post(
   '/',

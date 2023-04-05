@@ -39,7 +39,7 @@ router.get(
   validator(schema.getdateByMonth, ValidationSource.QUERY),
   authentication,
   asyncHandler(async (req, res, next) => {
-    const { month, year} = req.query;
+    const { month, year } = req.query;
     const revenue = await RevenueRepo.getRevenueByMonth(month, year);
     return new SuccessResponse('success', revenue).send(res);
   }),
