@@ -133,13 +133,14 @@ $(document).ready(async function () {
     paging: false,
     data: dailyRecoeds,
     columns: [
-      { data: 'id' },
-      { data: 'license_no' },
-      { data: 'owner_name' },
-      { data: 'action' },
-      { data: 'price' },
-      { data: 'createdAt' },
+      { data: 'id',width: '10%' },
+      { data: 'license_no',width: '20%' },
+      { data: 'owner_name',width: '20%' },
+      { data: 'action',width: '15%' },
+      { data: 'price',width: '15%' },
+      { data: 'createdAt',width: '20%' },
     ],
+   
   });
   // 點擊id = setting-time的按鈕，彈出Swal視窗，內容為上下班時間的input，以及今天沒有上班的按鈕
   // 打put request去 /revenue/worktime 路徑，將上下班時間的input的value與selectedDate傳到後端
@@ -242,8 +243,8 @@ $(document).ready(async function () {
   // 累積營收為line，各項類別為bar
   async function dailyRevenueTypeChart(data) {
     const { type_revenue = {} } = data;
-    console.log(type_revenue);
-    console.log(Object.keys(type_revenue).map((item) => MOTOSERVICE_TYPE[item]));
+    // console.log(type_revenue);
+    // console.log(Object.keys(type_revenue).map((item) => MOTOSERVICE_TYPE[item]));
     const inCome = Object.values(type_revenue);
     const accumulatedIncome = inCome.reduce((acc, cur) => {
       acc.push(cur + (acc[acc.length - 1] || 0));

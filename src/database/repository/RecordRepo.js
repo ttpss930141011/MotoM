@@ -21,7 +21,6 @@ module.exports = class RecordRepo {
   }
 
   static async countMotoRecordsInDateRange(motoId, startDate, endDate, session = null) {
-    console.log('countMotoRecordsInDateRange', motoId, startDate, endDate);
     return RecordModel.countDocuments(
       {
         moto_id: motoId,

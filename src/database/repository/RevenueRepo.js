@@ -47,7 +47,7 @@ module.exports = class RevenueRepo {
   // 如果這日期存在，則需要 push total_motos、new_motos與增加type_revenue內、total_revenue的營收
   // 如果這日期不存在，則需要新增一筆資料，並且push total_motos、new_motos與增加type_revenue內、total_revenue的營收
   static async upsert(record, session = null) {
-    const date = new Date(record.createdAt);
+    const date = new Date();
     date.setHours(0, 0, 0, 0);
     const { action, price, moto_id } = record;
     const update = {

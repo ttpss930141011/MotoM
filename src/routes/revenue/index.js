@@ -69,7 +69,6 @@ router.patch(
   authentication,
   asyncHandler(async (req, res, next) => {
     const { date, is_open } = req.body;
-    console.log(date, is_open);
     const dateTime = new Date(date);
     dateTime.setHours(0, 0, 0, 0);
     const revenue = await RevenueRepo.findOneByDateAndUpsert({
